@@ -1,2 +1,2 @@
 # CITS3403-project
-tournament analysis
+disease analysis

@@ -1,0 +1,43 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+*.env
+
+# VS Code settings
+.vscode/
+
+# Mac/Linux system files
+.DS_Store
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Flask/Python specific
+instance/
+*.sqlite3
+*.db
+*.log
+
+# Testing / coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.cache
+
+# PyInstaller
+dist/
+build/
+*.spec
+
+# Ignore CSV uploads or temporary files
+*.csv
+*.bak
+*.tmp

@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Plot Result</title>
+</head>
+<body>
+  <h1>Plot of Excess Deaths</h1>
+  <img src="{{ url_for('static', filename=plot_url) }}" alt="CSV Plot">
+  <br><a href="{{ url_for('index') }}">Upload another file</a>
+</body>
+</html>

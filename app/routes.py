@@ -10,6 +10,11 @@ from werkzeug.utils import secure_filename
 @app.route('/index')
 
 def index():
+    return render_template("login.html")
+
+@app.route('/upload_page')
+def upload_page():
+    # Ensure the upload folder exists
     return render_template("upload.html")
 
 @app.route('/plot')

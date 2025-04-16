@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+
+{% block title %}Plot Result{% endblock %}
+
+{% block content %}
+  <h1 class="mb-4">Plot of Excess Deaths</h1>
+  <div class="text-center">
+    <img src="{{ url_for('static', filename=plot_url) }}" alt="CSV Plot" class="img-fluid mb-4">
+    <br>
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Upload Another File</a>
+  </div>
+{% endblock %}

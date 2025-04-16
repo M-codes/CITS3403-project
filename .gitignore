@@ -41,3 +41,5 @@ build/
 *.csv
 *.bak
 *.tmp
+
+app/__pycache__

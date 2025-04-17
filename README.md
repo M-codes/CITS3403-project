@@ -11,7 +11,8 @@ Share Map to social stream, or privately
 Mockup design https://www.figma.com/design/apbwOMo7xaG9D8hvylg64a/Surface-Laptop%E2%80%A8-Mockup--Community-?node-id=31-3441&p=f&t=012q9qqrHNn1W8v7-0
 
 
-Before working on this project please activate venv: source venv/bin/activate
-
+Before working on this project please do the following:
+activate venv: source venv/bin/activate
+download requirements: pip install requirements.txt
 to run this project: flask run
 

@@ -1,12 +1,11 @@
-from flask import Blueprint, render_template, request, send_from_directory, current_app
+from flask import Blueprint, render_template, request, current_app
 from werkzeug.utils import secure_filename
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 import os
 
 from app import db
 from app.models import DataPoint
-
 
 bp = Blueprint('main', __name__)
 
@@ -29,35 +28,38 @@ def upload():
         file.save(filepath)
 
         df = pd.read_csv(filepath)
-        df.set_index(df.columns[0], inplace=True)  # First column is Region
-        df = df.apply(pd.to_numeric, errors='coerce')  # Ensure numeric data
 
         if df.dropna(axis=1, how='all').empty:
             return "No numeric data to plot.", 400
 
-        # --- Save to DB ---
-        for region, row in df.iterrows():
-            for date_str, value in row.items():
-                if pd.notnull(value):
-                    # Check if this data point already exists
-                    exists = DataPoint.query.filter_by(region=region, date=date_str).first()
-                    if not exists:
-                        point = DataPoint(region=region, date=date_str, value=value)
-                        db.session.add(point)
+        # Save to DB
+        for index, row in df.iterrows():
+            region = row["Entity"]
+            date_str = row["Day"]
+            value = row["Cumulative excess deaths per 100,000 people (central estimate)"]
+            if pd.notnull(value):
+                exists = DataPoint.query.filter_by(region=region, date=date_str).first()
+                if not exists:
+                    point = DataPoint(region=region, date=date_str, value=value)
+                    db.session.add(point)
         db.session.commit()
 
-        # --- Plot ---
-        df.T.plot(figsize=(12, 6))
-        plt.title("Uploaded Infection Data")
-        plt.tight_layout()
+        # --- Plot choropleth map using Plotly ---
+        fig = px.choropleth(
+            df,
+            locations="Entity",
+            locationmode="country names",
+            color="Cumulative excess deaths per 100,000 people (central estimate)",
+            hover_name="Entity",
+            color_continuous_scale="Reds",
+            title="Cumulative Excess Deaths per 100,000 People (Central Estimate)"
+        )
 
-        # Ensure 'static' directory exists
-        os.makedirs('static', exist_ok=True)
+        static_folder = os.path.join(current_app.root_path, 'static')
+        os.makedirs(static_folder, exist_ok=True)
+        map_path = os.path.join(static_folder, 'map_plot.html')
+        fig.write_html(map_path)
 
-        plot_path = os.path.join('static', 'plot.png')
-        plt.savefig(plot_path)
-        plt.close()
+        return render_template('result.html', plot_url='map_plot.html')
 
-        return render_template('result.html', plot_url='plot.png')
-    
     return "Invalid file format", 400

@@ -39,8 +39,11 @@ def upload():
         for region, row in df.iterrows():
             for date_str, value in row.items():
                 if pd.notnull(value):
-                    point = DataPoint(region=region, date=date_str, value=value)
-                    db.session.add(point)
+                    # Check if this data point already exists
+                    exists = DataPoint.query.filter_by(region=region, date=date_str).first()
+                    if not exists:
+                        point = DataPoint(region=region, date=date_str, value=value)
+                        db.session.add(point)
         db.session.commit()
 
         # --- Plot ---

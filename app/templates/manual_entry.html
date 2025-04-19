@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+
+{% block title %}Manual Data Entry{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Manually Add Data Point</h2>
+<form method="POST" class="form-group">
+    <label for="region">Region (Country Name)</label>
+    <select name="region" class="form-control" required>
+      {% for country in countries %}
+        <option value="{{ country }}">{{ country }}</option>
+      {% endfor %}
+    </select>
+
+  <label for="date">Date (YYYY-MM-DD)</label>
+  <input type="date" name="date" class="form-control" required>
+
+  <label for="value">Excess Deaths per 100,000</label>
+  <input type="number" step="any" name="value" class="form-control" required>
+
+  <button type="submit" class="btn btn-primary mt-3">Submit</button>
+</form>
+{% endblock %}

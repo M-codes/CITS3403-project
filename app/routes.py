@@ -17,6 +17,34 @@ def index():
 def upload_page():
     return render_template("upload.html")
 
+@bp.route('/manual_entry', methods=['GET', 'POST'])
+def manual_entry():
+    if request.method == 'POST':
+        region = request.form.get('region')
+        date_str = request.form.get('date')
+        value = request.form.get('value')
+
+        try:
+            value = float(value)
+        except (ValueError, TypeError):
+            return "Invalid value for excess deaths.", 400
+
+        if region and date_str and pd.notnull(value):
+            exists = DataPoint.query.filter_by(region=region, date=date_str).first()
+            if not exists:
+                point = DataPoint(region=region, date=date_str, value=value)
+                db.session.add(point)
+                db.session.commit()
+                return render_template('entry_success.html', region=region, date=date_str, value=value)
+            else:
+                return "Data point already exists.", 400
+        return "Missing or invalid input.", 400
+
+    # GET request — grab distinct country names from the database
+    country_list = [row[0] for row in db.session.query(DataPoint.region).distinct().order_by(DataPoint.region).all()]
+    return render_template('manual_entry.html', countries=country_list)
+    
+
 @bp.route('/upload', methods=['POST'])
 def upload():
     file = request.files.get('file')

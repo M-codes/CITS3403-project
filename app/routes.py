@@ -97,3 +97,30 @@ def upload():
         return render_template('result.html', plot_url='map_plot.html')
 
     return "Invalid file format", 400
+
+@bp.route('/map')
+def map_view():
+    selected_date = request.args.get('date')
+
+    if selected_date:
+        df = pd.read_sql(db.session.query(DataPoint).filter_by(date=selected_date).statement, db.session.bind)
+    else:
+        df = pd.read_sql(db.session.query(DataPoint).statement, db.session.bind)
+
+    if df.empty:
+        return "No data for that date.", 404
+
+    fig = px.choropleth(
+        df,
+        locations="region",
+        locationmode="country names",
+        color="value",
+        hover_name="region",
+        color_continuous_scale="Reds",
+        title=f"Excess Deaths on {selected_date}" if selected_date else "All Data"
+    )
+
+    map_path = os.path.join(current_app.static_folder, 'map_plot.html')
+    fig.write_html(map_path)
+    return render_template('result.html', plot_url='map_plot.html')
+

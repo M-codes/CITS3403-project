@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block title %}Data Table{% endblock %}
+
+{% block content %}
+<h1>All Recorded Data</h1>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Country</th>
+            <th>Date</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in data %}
+        <tr>
+            <td>{{ d.region }}</td>
+            <td>{{ d.date }}</td>
+            <td>{{ d.value }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -13,6 +13,12 @@ bp = Blueprint('main', __name__)
 def index():
     return render_template("login.html")
 
+@bp.route('/data_table')
+def data_table():
+    data = DataPoint.query.order_by(DataPoint.date.desc()).all()
+    return render_template('data_table.html', data=data)
+
+
 @bp.route('/upload_page')
 def upload_page():
     return render_template("upload.html")

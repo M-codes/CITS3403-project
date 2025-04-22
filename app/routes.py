@@ -56,9 +56,7 @@ def upload():
     file = request.files.get('file')
     if file and file.filename.endswith('.csv'):
         filename = secure_filename(file.filename)
-        upload_folder = current_app.config['UPLOAD_FOLDER']
-
-        filepath = os.path.join(upload_folder, filename)
+        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
         df = pd.read_csv(filepath)
@@ -66,37 +64,50 @@ def upload():
         if df.dropna(axis=1, how='all').empty:
             return "No numeric data to plot.", 400
 
-        # Save to DB
-        for index, row in df.iterrows():
+        for _, row in df.iterrows():
             region = row["Entity"]
             date_str = row["Day"]
             value = row["Cumulative excess deaths per 100,000 people (central estimate)"]
+            lower = row["Cumulative excess deaths per 100,000 people (95% CI, lower bound)"]
+            upper = row["Cumulative excess deaths per 100,000 people (95% CI, upper bound)"]
+            confirmed = row["Total confirmed deaths due to COVID-19 per 100,000 people"]
+
             if pd.notnull(value):
                 exists = DataPoint.query.filter_by(region=region, date=date_str).first()
                 if not exists:
-                    point = DataPoint(region=region, date=date_str, value=value)
-                    db.session.add(point)
+                    dp = DataPoint(
+                        region=region,
+                        date=date_str,
+                        value=value,
+                        lower_bound=lower,
+                        upper_bound=upper,
+                        confirmed_deaths=confirmed
+                    )
+                    db.session.add(dp)
         db.session.commit()
 
-        # --- Plot choropleth map using Plotly ---
+        # Use 'value' (central estimate) in the choropleth map
         fig = px.choropleth(
             df,
             locations="Entity",
             locationmode="country names",
             color="Cumulative excess deaths per 100,000 people (central estimate)",
             hover_name="Entity",
+            hover_data={
+                "Cumulative excess deaths per 100,000 people (95% CI, lower bound)": True,
+                "Cumulative excess deaths per 100,000 people (95% CI, upper bound)": True,
+                "Total confirmed deaths due to COVID-19 per 100,000 people": True
+            },
             color_continuous_scale="Reds",
             title="Cumulative Excess Deaths per 100,000 People (Central Estimate)"
         )
 
-        static_folder = os.path.join(current_app.root_path, 'static')
-        os.makedirs(static_folder, exist_ok=True)
-        map_path = os.path.join(static_folder, 'map_plot.html')
+        map_path = os.path.join(current_app.static_folder, 'map_plot.html')
         fig.write_html(map_path)
-
         return render_template('result.html', plot_url='map_plot.html')
 
     return "Invalid file format", 400
+
 
 @bp.route('/map')
 def map_view():

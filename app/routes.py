@@ -29,26 +29,48 @@ def manual_entry():
         region = request.form.get('region')
         date_str = request.form.get('date')
         value = request.form.get('value')
+        lower = request.form.get('lower_bound')
+        upper = request.form.get('upper_bound')
+        confirmed = request.form.get('confirmed_deaths')
 
         try:
             value = float(value)
-        except (ValueError, TypeError):
-            return "Invalid value for excess deaths.", 400
+            lower = float(lower) if lower else None
+            upper = float(upper) if upper else None
+            confirmed = float(confirmed) if confirmed else None
+        except ValueError:
+            return "Invalid numeric input.", 400
 
         if region and date_str and pd.notnull(value):
             exists = DataPoint.query.filter_by(region=region, date=date_str).first()
             if not exists:
-                point = DataPoint(region=region, date=date_str, value=value)
+                point = DataPoint(
+                    region=region,
+                    date=date_str,
+                    value=value,
+                    lower_bound=lower,
+                    upper_bound=upper,
+                    confirmed_deaths=confirmed
+                )
                 db.session.add(point)
                 db.session.commit()
-                return render_template('entry_success.html', region=region, date=date_str, value=value)
+                return render_template(
+                    'entry_success.html',
+                    region=region,
+                    date=date_str,
+                    value=value,
+                    lower=lower,
+                    upper=upper,
+                    confirmed=confirmed
+                )
             else:
                 return "Data point already exists.", 400
         return "Missing or invalid input.", 400
 
-    # GET request — grab distinct country names from the database
+    # GET: show form
     country_list = [row[0] for row in db.session.query(DataPoint.region).distinct().order_by(DataPoint.region).all()]
     return render_template('manual_entry.html', countries=country_list)
+
     
 
 @bp.route('/upload', methods=['POST'])

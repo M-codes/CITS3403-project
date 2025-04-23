@@ -3,10 +3,14 @@
 {% block title %}Plot Result{% endblock %}
 
 {% block content %}
-<h2>Map of Excess Deaths</h2>
-  <div class="text-center">
-    <iframe src="{{ url_for('static', filename=plot_url) }}" width="100%" height="600" frameborder="0"></iframe>
-    <br>
-    <a href="{{ url_for('main.upload_page') }}" class="btn btn-outline-secondary">Upload Another File</a>
-  </div>
+<h2 class="text-center mb-4">Map of Excess Deaths</h2>
+<div class="text-center">
+  <!-- Increased height to make sure slider/play button is visible -->
+  <iframe src="{{ url_for('static', filename=plot_url) }}" width="100%" height="900" frameborder="0" style="border: none;"></iframe>
+  
+  <br><br>
+  <a href="{{ url_for('main.upload_page') }}" class="btn btn-outline-secondary mt-3">Upload Another File</a>
+  <a href="{{ url_for('main.time_series') }}" class="btn btn-primary mt-3">View Time Series Graph</a>
+  <a href="{{ url_for('main.map_view') }}" class="btn btn-primary mt-3">View Map</a>
+</div>
 {% endblock %}

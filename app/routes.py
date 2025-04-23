@@ -138,18 +138,63 @@ def upload():
     flash("Invalid file format. Please upload a CSV file.", 'error')
     return redirect(url_for('main.upload_page'))
 
+@bp.route('/time_series')
+def time_series():
+    # Load all data using SQLAlchemy query
+    data = db.session.query(DataPoint).all()
+
+    if not data:
+        return "No data available.", 404
+
+    # Convert the data to a DataFrame
+    df = pd.DataFrame([{
+        'region': dp.region,
+        'date': dp.date,
+        'value': dp.value
+    } for dp in data])
+
+    # Optional: convert the 'date' column to datetime format
+    df['date'] = pd.to_datetime(df['date'])
+
+    # Create a line plot for time series (Excess Deaths over Time)
+    fig = px.line(
+        df,
+        x='date',
+        y='value',
+        title="Excess Deaths Over Time",
+        labels={'date': 'Date', 'value': 'Excess Deaths per 100,000 People'},
+        line_shape='linear'
+    )
+
+    # Save the plot as an HTML file
+    plot_path = os.path.join(current_app.static_folder, 'time_series_plot.html')
+    fig.write_html(plot_path)
+
+    return render_template('result.html', plot_url='time_series_plot.html')
+
+
+
+
 
 @bp.route('/map')
 def map_view():
     selected_date = request.args.get('date')
 
-    if selected_date:
-        df = pd.read_sql(db.session.query(DataPoint).filter_by(date=selected_date).statement, db.session.bind)
-    else:
-        df = pd.read_sql(db.session.query(DataPoint).statement, db.session.bind)
+    # Load all data using SQLAlchemy query
+    data = db.session.query(DataPoint).all()
 
-    if df.empty:
-        return "No data for that date.", 404
+    if not data:
+        return "No data available.", 404
+
+    # Convert the data to a DataFrame
+    df = pd.DataFrame([{
+        'region': dp.region,
+        'date': dp.date,
+        'value': dp.value
+    } for dp in data])
+
+    # Optional: convert the 'date' column to string for Plotly compatibility
+    df['date'] = df['date'].astype(str)
 
     fig = px.choropleth(
         df,
@@ -157,11 +202,17 @@ def map_view():
         locationmode="country names",
         color="value",
         hover_name="region",
+        animation_frame="date",  # 👈 Now it will show the slider
         color_continuous_scale="Reds",
-        title=f"Excess Deaths on {selected_date}" if selected_date else "All Data"
+        title="Excess Deaths Over Time"
     )
 
     map_path = os.path.join(current_app.static_folder, 'map_plot.html')
+    if os.path.exists(map_path):
+        os.remove(map_path)
     fig.write_html(map_path)
+
     return render_template('result.html', plot_url='map_plot.html')
+
+
 

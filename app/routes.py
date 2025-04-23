@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, current_app
+from flask import Blueprint, render_template, request, current_app, flash, redirect, url_for
 from werkzeug.utils import secure_filename
 import pandas as pd
 import plotly.express as px
@@ -39,7 +39,8 @@ def manual_entry():
             upper = float(upper) if upper else None
             confirmed = float(confirmed) if confirmed else None
         except ValueError:
-            return "Invalid numeric input.", 400
+            flash("Invalid numeric input.", 'error')
+            return redirect(url_for('main.manual_entry'))
 
         if region and date_str and pd.notnull(value):
             exists = DataPoint.query.filter_by(region=region, date=date_str).first()
@@ -64,8 +65,10 @@ def manual_entry():
                     confirmed=confirmed
                 )
             else:
-                return "Data point already exists.", 400
-        return "Missing or invalid input.", 400
+                flash("Data point already exists.", 'warning')
+                return redirect(url_for('main.manual_entry'))
+        flash("Missing or invalid input.", 'error')
+        return redirect(url_for('main.manual_entry'))
 
     # GET: show form
     country_list = [row[0] for row in db.session.query(DataPoint.region).distinct().order_by(DataPoint.region).all()]
@@ -81,18 +84,23 @@ def upload():
         filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        df = pd.read_csv(filepath)
+        try:
+            df = pd.read_csv(filepath)
+        except Exception as e:
+            flash("Failed to read CSV file.", 'error')
+            return redirect(url_for('main.upload_page'))
 
         if df.dropna(axis=1, how='all').empty:
-            return "No numeric data to plot.", 400
+            flash("No numeric data to plot.", 'warning')
+            return redirect(url_for('main.upload_page'))
 
         for _, row in df.iterrows():
-            region = row["Entity"]
-            date_str = row["Day"]
-            value = row["Cumulative excess deaths per 100,000 people (central estimate)"]
-            lower = row["Cumulative excess deaths per 100,000 people (95% CI, lower bound)"]
-            upper = row["Cumulative excess deaths per 100,000 people (95% CI, upper bound)"]
-            confirmed = row["Total confirmed deaths due to COVID-19 per 100,000 people"]
+            region = row.get("Entity")
+            date_str = row.get("Day")
+            value = row.get("Cumulative excess deaths per 100,000 people (central estimate)")
+            lower = row.get("Cumulative excess deaths per 100,000 people (95% CI, lower bound)")
+            upper = row.get("Cumulative excess deaths per 100,000 people (95% CI, upper bound)")
+            confirmed = row.get("Total confirmed deaths due to COVID-19 per 100,000 people")
 
             if pd.notnull(value):
                 exists = DataPoint.query.filter_by(region=region, date=date_str).first()
@@ -108,7 +116,6 @@ def upload():
                     db.session.add(dp)
         db.session.commit()
 
-        # Use 'value' (central estimate) in the choropleth map
         fig = px.choropleth(
             df,
             locations="Entity",
@@ -128,7 +135,8 @@ def upload():
         fig.write_html(map_path)
         return render_template('result.html', plot_url='map_plot.html')
 
-    return "Invalid file format", 400
+    flash("Invalid file format. Please upload a CSV file.", 'error')
+    return redirect(url_for('main.upload_page'))
 
 
 @bp.route('/map')

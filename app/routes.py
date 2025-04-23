@@ -23,6 +23,8 @@ def data_table():
 def upload_page():
     return render_template("upload.html")
 
+from datetime import datetime
+
 @bp.route('/manual_entry', methods=['GET', 'POST'])
 def manual_entry():
     if request.method == 'POST':
@@ -34,20 +36,22 @@ def manual_entry():
         confirmed = request.form.get('confirmed_deaths')
 
         try:
+            # Convert the date string to a datetime object
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()  # Change format as needed
             value = float(value)
             lower = float(lower) if lower else None
             upper = float(upper) if upper else None
             confirmed = float(confirmed) if confirmed else None
         except ValueError:
-            flash("Invalid numeric input.", 'error')
+            flash("Invalid numeric input or date format.", 'error')
             return redirect(url_for('main.manual_entry'))
 
-        if region and date_str and pd.notnull(value):
-            exists = DataPoint.query.filter_by(region=region, date=date_str).first()
+        if region and date and pd.notnull(value):
+            exists = DataPoint.query.filter_by(region=region, date=date).first()
             if not exists:
                 point = DataPoint(
                     region=region,
-                    date=date_str,
+                    date=date,  # Save the date as a datetime.date object
                     value=value,
                     lower_bound=lower,
                     upper_bound=upper,
@@ -173,12 +177,19 @@ def time_series():
     return render_template('result.html', plot_url='time_series_plot.html')
 
 
-
-
-
 @bp.route('/map')
 def map_view():
     selected_date = request.args.get('date')
+
+    # If selected_date is None, use the current date as a fallback
+    if not selected_date:
+        selected_date = pd.to_datetime('today').strftime('%Y-%m-%d')  # Default to today's date
+
+    try:
+        selected_date = pd.to_datetime(selected_date)
+    except Exception as e:
+        flash("Invalid date format.", 'error')
+        return redirect(url_for('main.index'))
 
     # Load all data using SQLAlchemy query
     data = db.session.query(DataPoint).all()
@@ -193,26 +204,39 @@ def map_view():
         'value': dp.value
     } for dp in data])
 
-    # Optional: convert the 'date' column to string for Plotly compatibility
-    df['date'] = df['date'].astype(str)
+    # Ensure 'date' column is in datetime format for Plotly compatibility
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
 
+    # Drop rows with missing dates
+    df = df.dropna(subset=['date'])
+
+    # Sort the DataFrame by date to ensure proper animation order
+    df = df.sort_values(by='date')
+
+    # Create the choropleth with animation (date slider)
     fig = px.choropleth(
         df,
         locations="region",
         locationmode="country names",
         color="value",
         hover_name="region",
-        animation_frame="date",  # 👈 Now it will show the slider
+        animation_frame="date",  # Date slider will be generated
         color_continuous_scale="Reds",
-        title="Excess Deaths Over Time"
+        title=f"Excess Deaths on {selected_date.strftime('%Y-%m-%d')}",  # Use the formatted date
+        range_color=[df['value'].min(), df['value'].max()]  # Ensures consistent color scale across all frames
     )
 
+    # Save the plot as an HTML file
     map_path = os.path.join(current_app.static_folder, 'map_plot.html')
     if os.path.exists(map_path):
         os.remove(map_path)
     fig.write_html(map_path)
 
     return render_template('result.html', plot_url='map_plot.html')
+
+
+
+
 
 
 

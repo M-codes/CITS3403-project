@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, current_app, flash, redirect, url_for
 from werkzeug.utils import secure_filename
 import pandas as pd
+from datetime import datetime
 import plotly.express as px
 import os
 
@@ -79,7 +80,6 @@ def manual_entry():
     return render_template('manual_entry.html', countries=country_list)
 
     
-
 @bp.route('/upload', methods=['POST'])
 def upload():
     file = request.files.get('file')
@@ -88,40 +88,63 @@ def upload():
         filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
+        all_data = []  # We'll collect rows for plotting
+
         try:
-            df = pd.read_csv(filepath)
+            chunk_iter = pd.read_csv(filepath, chunksize=1000)
+
+            for chunk in chunk_iter:
+                for _, row in chunk.iterrows():
+                    region = row.get("Entity")
+                    date_str = row.get("Day")
+
+                    try:
+                        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    except (ValueError, TypeError):
+                        continue
+
+                    value = row.get("Cumulative excess deaths per 100,000 people (central estimate)")
+                    lower = row.get("Cumulative excess deaths per 100,000 people (95% CI, lower bound)")
+                    upper = row.get("Cumulative excess deaths per 100,000 people (95% CI, upper bound)")
+                    confirmed = row.get("Total confirmed deaths due to COVID-19 per 100,000 people")
+
+                    if pd.notnull(value):
+                        exists = DataPoint.query.filter_by(region=region, date=date).first()
+                        if not exists:
+                            dp = DataPoint(
+                                region=region,
+                                date=date,
+                                value=value,
+                                lower_bound=lower,
+                                upper_bound=upper,
+                                confirmed_deaths=confirmed
+                            )
+                            db.session.add(dp)
+
+                        # Accumulate for plotting
+                        all_data.append({
+                            "Entity": region,
+                            "Day": date,
+                            "Cumulative excess deaths per 100,000 people (central estimate)": value,
+                            "Cumulative excess deaths per 100,000 people (95% CI, lower bound)": lower,
+                            "Cumulative excess deaths per 100,000 people (95% CI, upper bound)": upper,
+                            "Total confirmed deaths due to COVID-19 per 100,000 people": confirmed
+                        })
+
+            db.session.commit()
+
         except Exception as e:
-            flash("Failed to read CSV file.", 'error')
+            flash("Failed to read or process CSV file.", 'error')
             return redirect(url_for('main.upload_page'))
 
-        if df.dropna(axis=1, how='all').empty:
-            flash("No numeric data to plot.", 'warning')
+        if not all_data:
+            flash("No usable data found in the file.", 'warning')
             return redirect(url_for('main.upload_page'))
 
-        for _, row in df.iterrows():
-            region = row.get("Entity")
-            date_str = row.get("Day")
-            value = row.get("Cumulative excess deaths per 100,000 people (central estimate)")
-            lower = row.get("Cumulative excess deaths per 100,000 people (95% CI, lower bound)")
-            upper = row.get("Cumulative excess deaths per 100,000 people (95% CI, upper bound)")
-            confirmed = row.get("Total confirmed deaths due to COVID-19 per 100,000 people")
-
-            if pd.notnull(value):
-                exists = DataPoint.query.filter_by(region=region, date=date_str).first()
-                if not exists:
-                    dp = DataPoint(
-                        region=region,
-                        date=date_str,
-                        value=value,
-                        lower_bound=lower,
-                        upper_bound=upper,
-                        confirmed_deaths=confirmed
-                    )
-                    db.session.add(dp)
-        db.session.commit()
+        df_plot = pd.DataFrame(all_data)
 
         fig = px.choropleth(
-            df,
+            df_plot,
             locations="Entity",
             locationmode="country names",
             color="Cumulative excess deaths per 100,000 people (central estimate)",
@@ -137,10 +160,12 @@ def upload():
 
         map_path = os.path.join(current_app.static_folder, 'map_plot.html')
         fig.write_html(map_path)
+
         return render_template('result.html', plot_url='map_plot.html')
 
     flash("Invalid file format. Please upload a CSV file.", 'error')
     return redirect(url_for('main.upload_page'))
+
 
 @bp.route('/time_series')
 def time_series():

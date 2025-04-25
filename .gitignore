@@ -45,3 +45,7 @@ build/
 app/__pycache__
 
 instance/
+
+uploads/
+
+static/plots/

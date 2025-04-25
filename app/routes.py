@@ -158,10 +158,10 @@ def upload():
             title="Cumulative Excess Deaths per 100,000 People (Central Estimate)"
         )
 
-        map_path = os.path.join(current_app.static_folder, 'map_plot.html')
+        map_path = os.path.join(current_app.static_folder,'plots', 'map_plot.html')
         fig.write_html(map_path)
 
-        return render_template('result.html', plot_url='map_plot.html')
+        return render_template('result.html', plot_url='plots/map_plot.html')
 
     flash("Invalid file format. Please upload a CSV file.", 'error')
     return redirect(url_for('main.upload_page'))
@@ -196,10 +196,10 @@ def time_series():
     )
 
     # Save the plot as an HTML file
-    plot_path = os.path.join(current_app.static_folder, 'time_series_plot.html')
+    plot_path = os.path.join(current_app.static_folder,'plots', 'time_series_plot.html')
     fig.write_html(plot_path)
 
-    return render_template('result.html', plot_url='time_series_plot.html')
+    return render_template('result.html', plot_url='plots/time_series_plot.html')
 
 
 @bp.route('/map')
@@ -252,12 +252,12 @@ def map_view():
     )
 
     # Save the plot as an HTML file
-    map_path = os.path.join(current_app.static_folder, 'map_plot.html')
+    map_path = os.path.join(current_app.static_folder, 'plots/map_plot.html')
     if os.path.exists(map_path):
         os.remove(map_path)
     fig.write_html(map_path)
 
-    return render_template('result.html', plot_url='map_plot.html')
+    return render_template('result.html', plot_url='plots/map_plot.html')
 
 
 

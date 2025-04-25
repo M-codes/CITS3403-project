@@ -48,4 +48,5 @@ instance/
 
 uploads/
 
-static/plots/
+# Ignore all files in static/plot
+app/static/plots/*

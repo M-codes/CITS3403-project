@@ -2,6 +2,9 @@ from flask import Flask, request, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from werkzeug.security import generate_password_hash, check_password_hash
+from models import db, User
 
 # This is a simple Flask application that provides user registration, login, and logout functionality.
 app = Flask(__name__)
@@ -72,3 +75,56 @@ def logout():
 @app.route('/check-session')
 def check_session():
     return jsonify({'logged_in': 'user_id' in session})
+
+# Define the Blueprint
+auth_bp = Blueprint('auth', __name__)
+
+# Register route
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        # Check if email already exists
+        if User.query.filter_by(email=email).first():
+            flash('Email already exists!', 'error')
+            return redirect(url_for('auth.register'))
+
+        # Hash the password and create a new user
+        hashed_password = generate_password_hash(password, method='sha256')
+        new_user = User(email=email, password_hash=hashed_password)
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash('Account created successfully!', 'success')
+        return redirect(url_for('auth.login'))  # Redirect to the login page after registration
+
+    return render_template('signup.html')  # Render the signup page
+
+# Login route
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        # Find the user by email
+        user = User.query.filter_by(email=email).first()
+
+        if user and check_password_hash(user.password_hash, password):
+            # Store user session, login successful
+            flash('Login successful!', 'success')
+            return redirect(url_for('home'))  # Redirect to home page after successful login
+        else:
+            flash('Invalid email or password', 'error')
+
+    return render_template('login.html')  # Render the login page
+
+# Logout route
+@auth_bp.route('/logout')
+def logout():
+    # Perform logout by clearing the session
+    flash('Logged out successfully!', 'success')
+    return redirect(url_for('home'))  # Redirect to home page after logout

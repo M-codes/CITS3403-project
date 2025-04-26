@@ -13,6 +13,6 @@ Mockup design https://www.figma.com/design/apbwOMo7xaG9D8hvylg64a/Surface-Laptop
 
 Before working on this project please do the following:
 activate venv: source venv/bin/activate
-download requirements: pip install requirements.txt
+download requirements: pip install -r requirements.txt
 to run this project: flask run
 

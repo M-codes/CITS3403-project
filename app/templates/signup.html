@@ -42,6 +42,12 @@
                 data: JSON.stringify({ email, password }),
                 success: function (response) {
                     alert(response.message);
+                    if (isLogin) {
+                        window.location.href = '/home'; // Redirect to data table on successful login
+                    } else {
+                        $('#email').val('');
+                        $('#password').val('');
+                    }
                 },
                 error: function (xhr) {
                     alert(xhr.responseJSON.message || 'An error occurred.');

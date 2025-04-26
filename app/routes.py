@@ -9,9 +9,9 @@ from app.models import DataPoint
 
 bp = Blueprint('main', __name__)
 
-@bp.route('/')
+@bp.route('/home')
 def index():
-    return render_template("login.html")
+    return render_template("index.html")
 
 @bp.route('/data_table')
 def data_table():

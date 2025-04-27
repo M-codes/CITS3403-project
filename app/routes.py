@@ -88,7 +88,7 @@ def upload():
         filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        all_data = []  # We'll collect rows for plotting
+        all_data = []
 
         try:
             chunk_iter = pd.read_csv(filepath, chunksize=1000)
@@ -97,7 +97,6 @@ def upload():
                 for _, row in chunk.iterrows():
                     region = row.get("Entity")
                     date_str = row.get("Day")
-
                     try:
                         date = datetime.strptime(date_str, '%Y-%m-%d').date()
                     except (ValueError, TypeError):
@@ -121,7 +120,6 @@ def upload():
                             )
                             db.session.add(dp)
 
-                        # Accumulate for plotting
                         all_data.append({
                             "Entity": region,
                             "Day": date,
@@ -143,7 +141,8 @@ def upload():
 
         df_plot = pd.DataFrame(all_data)
 
-        fig = px.choropleth(
+        # --- Create the Map ---
+        fig_map = px.choropleth(
             df_plot,
             locations="Entity",
             locationmode="country names",
@@ -157,49 +156,28 @@ def upload():
             color_continuous_scale="Reds",
             title="Cumulative Excess Deaths per 100,000 People (Central Estimate)"
         )
+        map_path = os.path.join(current_app.static_folder, 'plots', 'map_plot.html')
+        fig_map.write_html(map_path)
 
-        map_path = os.path.join(current_app.static_folder,'plots', 'map_plot.html')
-        fig.write_html(map_path)
+        # --- Create the Time Series ---
+        df_plot['Day'] = pd.to_datetime(df_plot['Day'])
+        fig_line = px.line(
+            df_plot,
+            x='Day',
+            y='Cumulative excess deaths per 100,000 people (central estimate)',
+            title="Excess Deaths Over Time",
+            labels={'Day': 'Date', 'Cumulative excess deaths per 100,000 people (central estimate)': 'Excess Deaths per 100,000 People'},
+            line_shape='linear'
+        )
+        time_series_path = os.path.join(current_app.static_folder, 'plots', 'time_series_plot.html')
+        fig_line.write_html(time_series_path)
 
-        return render_template('result.html', plot_url='plots/map_plot.html')
+        # --- Pass both plots to the result page ---
+        return render_template('result.html', plot_url='plots/map_plot.html', time_series_url='plots/time_series_plot.html')
 
     flash("Invalid file format. Please upload a CSV file.", 'error')
     return redirect(url_for('main.upload_page'))
 
-
-@bp.route('/time_series')
-def time_series():
-    # Load all data using SQLAlchemy query
-    data = db.session.query(DataPoint).all()
-
-    if not data:
-        return "No data available.", 404
-
-    # Convert the data to a DataFrame
-    df = pd.DataFrame([{
-        'region': dp.region,
-        'date': dp.date,
-        'value': dp.value
-    } for dp in data])
-
-    # Optional: convert the 'date' column to datetime format
-    df['date'] = pd.to_datetime(df['date'])
-
-    # Create a line plot for time series (Excess Deaths over Time)
-    fig = px.line(
-        df,
-        x='date',
-        y='value',
-        title="Excess Deaths Over Time",
-        labels={'date': 'Date', 'value': 'Excess Deaths per 100,000 People'},
-        line_shape='linear'
-    )
-
-    # Save the plot as an HTML file
-    plot_path = os.path.join(current_app.static_folder,'plots', 'time_series_plot.html')
-    fig.write_html(plot_path)
-
-    return render_template('result.html', plot_url='plots/time_series_plot.html')
 
 
 @bp.route('/map')

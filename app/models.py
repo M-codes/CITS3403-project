@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
-
+from app.auth import User  # or wherever User is defined
 from app import db
 
 class DataPoint(db.Model):
@@ -12,3 +12,7 @@ class DataPoint(db.Model):
     lower_bound = db.Column(db.Float)
     upper_bound = db.Column(db.Float)
     confirmed_deaths = db.Column(db.Float)
+    # NEW: Add foreign key to User
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    user = db.relationship('User', backref='datapoints')

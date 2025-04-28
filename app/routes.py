@@ -17,6 +17,12 @@ def upload_page():
     # Ensure the upload folder exists
     return render_template("upload.html")
 
+@app.route('/forum')
+def forum():
+    return render_template("forum.html")
+
+
+
 @app.route('/plot')
 def plot():
     # Serve the plot image from the 'static' folder

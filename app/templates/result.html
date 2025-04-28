@@ -3,7 +3,7 @@
 {% block title %}Plot Result{% endblock %}
 
 {% block content %}
-<h2 class="text-center mb-6">Maps and Graphs of Excess Deaths</h2>
+<h2 class="text-3xl font-bold text-center mb-8">Maps and Graphs of Excess Deaths</h2>
 
 <div class="flex flex-col gap-12 items-center">
 
@@ -20,10 +20,11 @@
     </div>
 
     <!-- Buttons -->
-    <div class="flex gap-4 justify-center mt-8">
-        <a href="{{ url_for('main.upload_page') }}" class="btn btn-outline-secondary">Upload Another File</a>
-        <a href="{{ url_for('main.index') }}" class="btn btn-primary">Return to Home</a>
+    <div class="flex justify-center gap-4 mt-8">
+      <a href="{{ url_for('main.upload_page') }}" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Upload Another File</a>
+      <a href="{{ url_for('main.index') }}" class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">Return to Home</a>
     </div>
+
 
 </div>
 {% endblock %}

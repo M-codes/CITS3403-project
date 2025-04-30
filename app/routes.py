@@ -28,7 +28,7 @@ def data_table():
 def upload_page():
     return render_template("upload.html")
 
-from datetime import datetime
+
 
 @bp.route('/manual_entry', methods=['GET', 'POST'])
 def manual_entry():
@@ -65,15 +65,8 @@ def manual_entry():
                 )
                 db.session.add(point)
                 db.session.commit()
-                return render_template(
-                    'entry_success.html',
-                    region=region,
-                    date=date_str,
-                    value=value,
-                    lower=lower,
-                    upper=upper,
-                    confirmed=confirmed
-                )
+                flash(f"Data for {region} on {date_str} added successfully.", 'success')
+                return redirect(url_for('main.manual_entry'))
             else:
                 flash("Data point already exists.", 'warning')
                 return redirect(url_for('main.manual_entry'))
@@ -145,7 +138,18 @@ def upload():
             flash("No usable data found in the file.", 'warning')
             return redirect(url_for('main.upload_page'))
 
-        df_plot = pd.DataFrame(all_data)
+        # After the upload, let's base the plot on the entire user's data (from the DB)
+        user_data = DataPoint.query.filter_by(user_id=session['user_id']).all()
+
+        # Convert the data to DataFrame for plotting
+        df_plot = pd.DataFrame([{
+            "Entity": dp.region,
+            "Day": dp.date,
+            "Cumulative excess deaths per 100,000 people (central estimate)": dp.value,
+            "Cumulative excess deaths per 100,000 people (95% CI, lower bound)": dp.lower_bound,
+            "Cumulative excess deaths per 100,000 people (95% CI, upper bound)": dp.upper_bound,
+            "Total confirmed deaths due to COVID-19 per 100,000 people": dp.confirmed_deaths
+        } for dp in user_data])
 
         # --- Create the Map ---
         fig_map = px.choropleth(
@@ -154,6 +158,7 @@ def upload():
             locationmode="country names",
             color="Cumulative excess deaths per 100,000 people (central estimate)",
             hover_name="Entity",
+            animation_frame="Day", 
             hover_data={
                 "Cumulative excess deaths per 100,000 people (95% CI, lower bound)": True,
                 "Cumulative excess deaths per 100,000 people (95% CI, upper bound)": True,
@@ -178,30 +183,27 @@ def upload():
 
         # Add a dropdown filter for country
         fig_line.update_layout(
-            updatemenus=[
-                {
-                    'buttons': [
-                        {
-                            'method': 'update',
-                            'label': 'All Countries',
-                            'args': [{'visible': [True] * len(fig_line.data)},
-                                    {'title': 'Excess Deaths Over Time (All Countries)'}]
-                        }
-                    ] + [
-                        {
-                            'method': 'update',
-                            'label': country,
-                            'args': [
-                                {'visible': [trace.name == country for trace in fig_line.data]},
-                                {'title': f'Excess Deaths Over Time - {country}'}
-                            ]
-                        }
-                        for country in df_plot['Entity'].dropna().unique()
-                    ],
-                    'direction': 'down',
-                    'showactive': True
-                }
-            ]
+            updatemenus=[{
+                'buttons': [
+                    {
+                        'method': 'update',
+                        'label': 'All Countries',
+                        'args': [{'visible': [True] * len(fig_line.data)}, {'title': 'Excess Deaths Over Time (All Countries)'}]
+                    }
+                ] + [
+                    {
+                        'method': 'update',
+                        'label': country,
+                        'args': [
+                            {'visible': [trace.name == country for trace in fig_line.data]},
+                            {'title': f'Excess Deaths Over Time - {country}'}
+                        ]
+                    }
+                    for country in df_plot['Entity'].dropna().unique()
+                ],
+                'direction': 'down',
+                'showactive': True
+            }]
         )
         time_series_path = os.path.join(current_app.static_folder, 'plots', 'time_series_plot.html')
         fig_line.write_html(time_series_path)
@@ -211,6 +213,7 @@ def upload():
 
     flash("Invalid file format. Please upload a CSV file.", 'error')
     return redirect(url_for('main.upload_page'))
+
 
 
 
@@ -228,8 +231,7 @@ def map_view():
         flash("Invalid date format.", 'error')
         return redirect(url_for('main.index'))
 
-    # Load all data using SQLAlchemy query
-    data = db.session.query(DataPoint).all()
+    
 
     data = DataPoint.query.filter_by(user_id=session['user_id']).all()
 

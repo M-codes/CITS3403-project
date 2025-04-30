@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, current_app, flash, redirect, url_for
+from flask import Blueprint, render_template, request, current_app, flash, redirect, url_for, session
 from werkzeug.utils import secure_filename
 import pandas as pd
 from datetime import datetime
@@ -16,7 +16,11 @@ def index():
 
 @bp.route('/data_table')
 def data_table():
-    data = DataPoint.query.order_by(DataPoint.date.desc()).all()
+    if 'user_id' not in session:
+        flash("Please log in to view your data.", 'warning')
+        return redirect(url_for('auth.home'))
+    
+    data = DataPoint.query.filter_by(user_id=session['user_id']).order_by(DataPoint.date.desc()).all()
     return render_template('data_table.html', data=data)
 
 
@@ -56,7 +60,8 @@ def manual_entry():
                     value=value,
                     lower_bound=lower,
                     upper_bound=upper,
-                    confirmed_deaths=confirmed
+                    confirmed_deaths=confirmed,
+                    user_id=session['user_id'] 
                 )
                 db.session.add(point)
                 db.session.commit()
@@ -116,7 +121,8 @@ def upload():
                                 value=value,
                                 lower_bound=lower,
                                 upper_bound=upper,
-                                confirmed_deaths=confirmed
+                                confirmed_deaths=confirmed,
+                                user_id=session['user_id']
                             )
                             db.session.add(dp)
 
@@ -169,6 +175,34 @@ def upload():
             labels={'Day': 'Date', 'Cumulative excess deaths per 100,000 people (central estimate)': 'Excess Deaths per 100,000 People'},
             line_shape='linear'
         )
+
+        # Add a dropdown filter for country
+        fig_line.update_layout(
+            updatemenus=[
+                {
+                    'buttons': [
+                        {
+                            'method': 'update',
+                            'label': 'All Countries',
+                            'args': [{'visible': [True] * len(fig_line.data)},
+                                    {'title': 'Excess Deaths Over Time (All Countries)'}]
+                        }
+                    ] + [
+                        {
+                            'method': 'update',
+                            'label': country,
+                            'args': [
+                                {'visible': [trace.name == country for trace in fig_line.data]},
+                                {'title': f'Excess Deaths Over Time - {country}'}
+                            ]
+                        }
+                        for country in df_plot['Entity'].dropna().unique()
+                    ],
+                    'direction': 'down',
+                    'showactive': True
+                }
+            ]
+        )
         time_series_path = os.path.join(current_app.static_folder, 'plots', 'time_series_plot.html')
         fig_line.write_html(time_series_path)
 
@@ -196,6 +230,8 @@ def map_view():
 
     # Load all data using SQLAlchemy query
     data = db.session.query(DataPoint).all()
+
+    data = DataPoint.query.filter_by(user_id=session['user_id']).all()
 
     if not data:
         return "No data available.", 404

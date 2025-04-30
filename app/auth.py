@@ -59,7 +59,18 @@ def logout():
 def check_session():
     return jsonify({'logged_in': 'user_id' in session})
 
+# Login page route
+@auth_bp.route('/login-page', methods=['GET'])
+def login_page():
+    return render_template('login.html')  # Ensure login.html is in the templates/ directory
+# Signup page route
+@auth_bp.route('/signup-page', methods=['GET'])
+def signup_page():
+    return render_template('signup.html')  # Ensure signup.html is in the templates/ directory
+
+
 # Home route
 @auth_bp.route('/')
 def home():
     return render_template('signup.html')  # signup.html should be in app/templates/
+

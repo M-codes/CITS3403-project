@@ -209,12 +209,32 @@ def upload():
         fig_line.write_html(time_series_path)
 
         # --- Pass both plots to the result page ---
-        return render_template('result.html', plot_url='plots/map_plot.html', time_series_url='plots/time_series_plot.html')
+        # Store latest uploaded data in session (or in temp DB if large)
+        session['upload_success'] = True
+        flash("Upload successful. Please select a graph to view.", "success")
+        return redirect(url_for('main.select_graph'))
 
     flash("Invalid file format. Please upload a CSV file.", 'error')
     return redirect(url_for('main.upload_page'))
 
+@bp.route('/select_graph', methods=['GET', 'POST'])
+def select_graph():
+    if not session.get('upload_success'):
+        flash("Please upload data first.", "warning")
+        return redirect(url_for('main.upload_page'))
 
+    if request.method == 'POST':
+        graph_type = request.form.get('graph_type')
+        if graph_type == 'map':
+            return redirect(url_for('main.map_view'))
+        elif graph_type == 'line':
+            return redirect(url_for('main.show_line_graph'))
+        elif graph_type == 'bar':
+            return redirect(url_for('main.show_bar_graph'))
+        elif graph_type == 'pie':
+            return redirect(url_for('main.show_pie_chart'))
+
+    return render_template('select_graph.html')
 
 
 @bp.route('/map')
@@ -275,7 +295,33 @@ def map_view():
 
     return render_template('result.html', plot_url='plots/map_plot.html')
 
+@bp.route('/line_chart')
+def show_line_graph():
+    # Same code as your existing line chart generation
+    return render_template('result.html', plot_url='plots/time_series_plot.html')
 
+@bp.route('/bar_chart')
+def show_bar_graph():
+    # Example bar chart
+    data = DataPoint.query.filter_by(user_id=session['user_id']).all()
+    df = pd.DataFrame([{'region': d.region, 'value': d.value} for d in data])
+    df = df.groupby('region').mean(numeric_only=True).reset_index()
+
+    fig = px.bar(df, x='region', y='value', title="Average Excess Deaths by Region")
+    path = os.path.join(current_app.static_folder, 'plots/bar_chart.html')
+    fig.write_html(path)
+    return render_template('result.html', plot_url='plots/bar_chart.html')
+
+
+@bp.route('/pie_chart')
+def show_pie_chart():
+    data = DataPoint.query.filter_by(user_id=session['user_id']).all()
+    df = pd.DataFrame([{'region': d.region, 'value': d.value} for d in data])
+    df = df.groupby('region').sum(numeric_only=True).reset_index()
+    fig = px.pie(df, values='value', names='region', title='Excess Death Share by Region')
+    path = os.path.join(current_app.static_folder, 'plots/pie_chart.html')
+    fig.write_html(path)
+    return render_template('result.html', plot_url='plots/pie_chart.html')
 
 
 

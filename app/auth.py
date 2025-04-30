@@ -59,7 +59,35 @@ def logout():
 def check_session():
     return jsonify({'logged_in': 'user_id' in session})
 
+# Login page route
+@auth_bp.route('/login-page', methods=['GET'])
+def login_page():
+    return render_template('login.html')  # Ensure login.html is in the templates/ directory
+# Signup page route
+@auth_bp.route('/signup-page', methods=['GET'])
+def signup_page():
+    return render_template('signup.html')  # Ensure signup.html is in the templates/ directory
+
+# Forgot password page route
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            flash('No account with that email was found.', 'danger')
+            return redirect(url_for('auth.forgot_password'))
+
+        # Here you would normally send an email with a reset token
+        flash('Password reset instructions have been sent to your email.', 'info')
+        return redirect(url_for('auth.login_page'))
+
+    return render_template('forgot_password.html')
+
+
 # Home route
 @auth_bp.route('/')
 def home():
     return render_template('signup.html')  # signup.html should be in app/templates/
+

@@ -236,6 +236,42 @@ def select_graph():
 
     return render_template('select_graph.html')
 
+@bp.route('/manage_data', methods=['GET', 'POST'])
+def manage_data():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("You must be logged in to manage your data.", "error")
+        return redirect(url_for('auth.login'))
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'clear_all':
+            DataPoint.query.filter_by(user_id=user_id).delete()
+            db.session.commit()
+            flash("All your data has been cleared.", "success")
+            return redirect(url_for('main.manage_data'))
+
+        elif action == 'delete_one':
+            dp_id = request.form.get('data_id')
+            if dp_id and dp_id.isdigit():
+                dp = DataPoint.query.filter_by(id=int(dp_id), user_id=user_id).first()
+                if dp:
+                    db.session.delete(dp)
+                    db.session.commit()
+                    flash("Record deleted.", "success")
+                else:
+                    flash("Record not found or unauthorized.", "warning")
+            else:
+                flash("Invalid record ID.", "error")
+
+        return redirect(url_for('main.manage_data'))
+
+    # GET: Show all user's data
+    data = DataPoint.query.filter_by(user_id=user_id).all()
+    return render_template('manage_data.html', data=data)
+
+
 
 @bp.route('/map')
 def map_view():

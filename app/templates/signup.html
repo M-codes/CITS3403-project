@@ -24,37 +24,45 @@
     </div>
 
     <!-- Right Side: Signup Form -->
-    <div class="w-1/2 flex items-center justify-center p-8 bg-gray-100">
-        <div class="w-full max-w-md bg-white p-8 rounded shadow-md">
-            <h2 class="text-2xl font-bold mb-6 text-center">Sign Up</h2>
-            <input type="email" id="email" placeholder="Email" class="w-full border p-2 mb-4 rounded">
-            <input type="password" id="password" placeholder="Password" class="w-full border p-2 mb-4 rounded">
-            <button id="signupBtn" class="w-full bg-purple-300 text-black py-2 rounded">Sign Up</button>
-            <p class="mt-4 text-sm text-center">Already have an account? 
-                <a href="/login-page" class="text-purple-600 hover:underline">Log in</a>
-            </p>
-        </div>
+<div class="w-1/2 flex items-center justify-center p-8 bg-gray-100">
+    <div class="w-full max-w-md bg-white p-8 rounded shadow-md">
+        <h2 class="text-2xl font-bold mb-6 text-center">Sign Up</h2>
+
+        <!-- Form wrapper added -->
+        <form id="signupForm">
+            <input type="email" id="email" placeholder="Email" class="w-full border p-2 mb-4 rounded" required>
+            <input type="password" id="password" placeholder="Password" class="w-full border p-2 mb-4 rounded" required>
+            <button type="submit" class="w-full bg-purple-300 text-black py-2 rounded">Sign Up</button>
+        </form>
+
+        <p class="mt-4 text-sm text-center">Already have an account? 
+            <a href="/login-page" class="text-purple-600 hover:underline">Log in</a>
+        </p>
     </div>
+</div>
 
-    <script>
-        $('#signupBtn').click(function () {
-            const email = $('#email').val();
-            const password = $('#password').val();
+<script>
+    $('#signupForm').on('submit', function (e) {
+        e.preventDefault(); // Prevent default form behavior
 
-            $.ajax({
-                url: '/register',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ email, password }),
-                success: function (res) {
-                    alert(res.message);
-                    window.location.href = '/home';
-                },
-                error: function (xhr) {
-                    alert(xhr.responseJSON.message || 'Signup failed');
-                }
-            });
+        const email = $('#email').val();
+        const password = $('#password').val();
+
+        $.ajax({
+            url: '/register',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ email, password }),
+            success: function (res) {
+                alert(res.message);
+                window.location.href = '/home'; // Redirect on success
+            },
+            error: function (xhr) {
+                alert(xhr.responseJSON.message || 'Signup failed');
+            }
         });
-    </script>
+    });
+</script>
+
 </body>
 </html>

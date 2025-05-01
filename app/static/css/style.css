@@ -117,13 +117,3 @@ body{
     text-decoration: underline;
 }
 
-.header-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 60px; /* Adjust height as needed */
-    background-color: rgba(255, 255, 255, 0.5); /* Change to red for visibility */
-    z-index: 1000; /* Ensures it stays on top of other elements */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Optional shadow for better visibility */
-}

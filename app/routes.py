@@ -28,7 +28,7 @@ def data_table():
 def upload_page():
     return render_template("upload.html")
 
-@app.route('/forum')
+@bp.route('/forum')
 def forum():
     return render_template("forum.html")
 

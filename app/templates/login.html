@@ -24,40 +24,45 @@
     </div>
 
     <!-- Right Side: Login Form -->
-    <div class="w-1/2 flex items-center justify-center p-8 bg-gray-100">
-        <div class="w-full max-w-md bg-white p-8 rounded shadow-md">
-            <h2 class="text-2xl font-bold mb-6 text-center">Log In</h2>
-            <input type="email" id="email" placeholder="Email" class="w-full border p-2 mb-4 rounded">
-            <input type="password" id="password" placeholder="Password" class="w-full border p-2 mb-4 rounded">
-            <button id="loginBtn" class="w-full bg-purple-300 text-black py-2 rounded">Log In</button>
-            <p class="mt-2 text-sm text-center">
-                <a href="/forgot-password" class="text-indigo-600 hover:underline">Forgot your password?</a>
-            </p>            
-            <p class="mt-4 text-sm text-center">Don't have an account? 
-                <a href="/signup-page" class="text-indigo-600 hover:underline">Sign up</a>
-            </p>
-        </div>
+<div class="w-1/2 flex items-center justify-center p-8 bg-gray-100">
+    <div class="w-full max-w-md bg-white p-8 rounded shadow-md">
+        <h2 class="text-2xl font-bold mb-6 text-center">Log In</h2>
+
+        <!-- Wrap inputs in a form -->
+        <form id="loginForm">
+            <input type="email" id="email" placeholder="Email" class="w-full border p-2 mb-4 rounded" required>
+            <input type="password" id="password" placeholder="Password" class="w-full border p-2 mb-4 rounded" required>
+            <button type="submit" class="w-full bg-purple-300 text-black py-2 rounded">Log In</button>
+        </form>
+
+        <p class="mt-2 text-sm text-center">
+            <a href="/forgot-password" class="text-indigo-600 hover:underline">Forgot your password?</a>
+        </p>            
+        <p class="mt-4 text-sm text-center">Don't have an account? 
+            <a href="/signup-page" class="text-indigo-600 hover:underline">Sign up</a>
+        </p>
     </div>
+</div>
 
-    <script>
-        $('#loginBtn').click(function () {
-            const email = $('#email').val();
-            const password = $('#password').val();
+<script>
+    $('#loginForm').on('submit', function (e) {
+        e.preventDefault(); // Prevent form from refreshing the page
 
-            $.ajax({
-                url: '/login',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ email, password }),
-                success: function (res) {
-                    alert(res.message);
-                    window.location.href = '/home'; //home page after login
-                },
-                error: function (xhr) {
-                    alert(xhr.responseJSON.message || 'Login failed');
-                }
-            });
-        }); 
-    </script>
-</body>
-</html>
+        const email = $('#email').val();
+        const password = $('#password').val();
+
+        $.ajax({
+            url: '/login',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ email, password }),
+            success: function (res) {
+                alert(res.message);
+                window.location.href = '/home'; // Redirect on success
+            },
+            error: function (xhr) {
+                alert(xhr.responseJSON.message || 'Login failed');
+            }
+        });
+    });
+</script>

@@ -73,15 +73,8 @@ def manual_entry():
                 )
                 db.session.add(point)
                 db.session.commit()
-                return render_template(
-                    'entry_success.html',
-                    region=region,
-                    date=date_str,
-                    value=value,
-                    lower=lower,
-                    upper=upper,
-                    confirmed=confirmed
-                )
+                flash(f"Data for {region} on {date_str} added successfully.", 'success')
+                return redirect(url_for('main.manual_entry'))
             else:
                 flash("Data point already exists.", 'warning')
                 return redirect(url_for('main.manual_entry'))
@@ -153,7 +146,18 @@ def upload():
             flash("No usable data found in the file.", 'warning')
             return redirect(url_for('main.upload_page'))
 
-        df_plot = pd.DataFrame(all_data)
+        # After the upload, let's base the plot on the entire user's data (from the DB)
+        user_data = DataPoint.query.filter_by(user_id=session['user_id']).all()
+
+        # Convert the data to DataFrame for plotting
+        df_plot = pd.DataFrame([{
+            "Entity": dp.region,
+            "Day": dp.date,
+            "Cumulative excess deaths per 100,000 people (central estimate)": dp.value,
+            "Cumulative excess deaths per 100,000 people (95% CI, lower bound)": dp.lower_bound,
+            "Cumulative excess deaths per 100,000 people (95% CI, upper bound)": dp.upper_bound,
+            "Total confirmed deaths due to COVID-19 per 100,000 people": dp.confirmed_deaths
+        } for dp in user_data])
 
         # --- Create the Map ---
         fig_map = px.choropleth(
@@ -162,6 +166,7 @@ def upload():
             locationmode="country names",
             color="Cumulative excess deaths per 100,000 people (central estimate)",
             hover_name="Entity",
+            animation_frame="Day", 
             hover_data={
                 "Cumulative excess deaths per 100,000 people (95% CI, lower bound)": True,
                 "Cumulative excess deaths per 100,000 people (95% CI, upper bound)": True,
@@ -186,39 +191,93 @@ def upload():
 
         # Add a dropdown filter for country
         fig_line.update_layout(
-            updatemenus=[
-                {
-                    'buttons': [
-                        {
-                            'method': 'update',
-                            'label': 'All Countries',
-                            'args': [{'visible': [True] * len(fig_line.data)},
-                                    {'title': 'Excess Deaths Over Time (All Countries)'}]
-                        }
-                    ] + [
-                        {
-                            'method': 'update',
-                            'label': country,
-                            'args': [
-                                {'visible': [trace.name == country for trace in fig_line.data]},
-                                {'title': f'Excess Deaths Over Time - {country}'}
-                            ]
-                        }
-                        for country in df_plot['Entity'].dropna().unique()
-                    ],
-                    'direction': 'down',
-                    'showactive': True
-                }
-            ]
+            updatemenus=[{
+                'buttons': [
+                    {
+                        'method': 'update',
+                        'label': 'All Countries',
+                        'args': [{'visible': [True] * len(fig_line.data)}, {'title': 'Excess Deaths Over Time (All Countries)'}]
+                    }
+                ] + [
+                    {
+                        'method': 'update',
+                        'label': country,
+                        'args': [
+                            {'visible': [trace.name == country for trace in fig_line.data]},
+                            {'title': f'Excess Deaths Over Time - {country}'}
+                        ]
+                    }
+                    for country in df_plot['Entity'].dropna().unique()
+                ],
+                'direction': 'down',
+                'showactive': True
+            }]
         )
         time_series_path = os.path.join(current_app.static_folder, 'plots', 'time_series_plot.html')
         fig_line.write_html(time_series_path)
 
         # --- Pass both plots to the result page ---
-        return render_template('result.html', plot_url='plots/map_plot.html', time_series_url='plots/time_series_plot.html')
+        # Store latest uploaded data in session (or in temp DB if large)
+        session['upload_success'] = True
+        flash("Upload successful. Please select a graph to view.", "success")
+        return redirect(url_for('main.select_graph'))
 
     flash("Invalid file format. Please upload a CSV file.", 'error')
     return redirect(url_for('main.upload_page'))
+
+@bp.route('/select_graph', methods=['GET', 'POST'])
+def select_graph():
+    if not session.get('upload_success'):
+        flash("Please upload data first.", "warning")
+        return redirect(url_for('main.upload_page'))
+
+    if request.method == 'POST':
+        graph_type = request.form.get('graph_type')
+        if graph_type == 'map':
+            return redirect(url_for('main.map_view'))
+        elif graph_type == 'line':
+            return redirect(url_for('main.show_line_graph'))
+        elif graph_type == 'bar':
+            return redirect(url_for('main.show_bar_graph'))
+        elif graph_type == 'pie':
+            return redirect(url_for('main.show_pie_chart'))
+
+    return render_template('select_graph.html')
+
+@bp.route('/manage_data', methods=['GET', 'POST'])
+def manage_data():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("You must be logged in to manage your data.", "error")
+        return redirect(url_for('auth.login'))
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'clear_all':
+            DataPoint.query.filter_by(user_id=user_id).delete()
+            db.session.commit()
+            flash("All your data has been cleared.", "success")
+            return redirect(url_for('main.manage_data'))
+
+        elif action == 'delete_one':
+            dp_id = request.form.get('data_id')
+            if dp_id and dp_id.isdigit():
+                dp = DataPoint.query.filter_by(id=int(dp_id), user_id=user_id).first()
+                if dp:
+                    db.session.delete(dp)
+                    db.session.commit()
+                    flash("Record deleted.", "success")
+                else:
+                    flash("Record not found or unauthorized.", "warning")
+            else:
+                flash("Invalid record ID.", "error")
+
+        return redirect(url_for('main.manage_data'))
+
+    # GET: Show all user's data
+    data = DataPoint.query.filter_by(user_id=user_id).all()
+    return render_template('manage_data.html', data=data)
 
 
 
@@ -236,8 +295,7 @@ def map_view():
         flash("Invalid date format.", 'error')
         return redirect(url_for('main.index'))
 
-    # Load all data using SQLAlchemy query
-    data = db.session.query(DataPoint).all()
+    
 
     data = DataPoint.query.filter_by(user_id=session['user_id']).all()
 
@@ -280,6 +338,40 @@ def map_view():
     fig.write_html(map_path)
 
     return render_template('result.html', plot_url='plots/map_plot.html')
+
+@bp.route('/line_chart')
+def show_line_graph():
+    # Same code as your existing line chart generation
+    return render_template('result.html', plot_url='plots/time_series_plot.html')
+
+@bp.route('/bar_chart')
+def show_bar_graph():
+    # Example bar chart
+    data = DataPoint.query.filter_by(user_id=session['user_id']).all()
+    df = pd.DataFrame([{'region': d.region, 'value': d.value} for d in data])
+    df = df.groupby('region').mean(numeric_only=True).reset_index()
+
+    fig = px.bar(df, x='region', y='value', title="Average Excess Deaths by Region")
+    path = os.path.join(current_app.static_folder, 'plots/bar_chart.html')
+    fig.write_html(path)
+    return render_template('result.html', plot_url='plots/bar_chart.html')
+
+
+@bp.route('/pie_chart')
+def show_pie_chart():
+    data = DataPoint.query.filter_by(user_id=session['user_id']).all()
+    df = pd.DataFrame([{'region': d.region, 'value': d.value} for d in data])
+    df = df.groupby('region').sum(numeric_only=True).reset_index()
+    fig = px.pie(df, values='value', names='region', title='Excess Death Share by Region')
+    path = os.path.join(current_app.static_folder, 'plots/pie_chart.html')
+    fig.write_html(path)
+    return render_template('result.html', plot_url='plots/pie_chart.html')@bp.route('/upload_post', methods=['POST'])
+
+
+
+
+
+
 
 @bp.route('/upload_post', methods=['POST'])
 def upload_post():

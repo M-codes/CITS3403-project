@@ -3,10 +3,28 @@
 {% block title %}Plot Result{% endblock %}
 
 {% block content %}
-  <h1 class="mb-4">Plot of Excess Deaths</h1>
-  <div class="text-center">
-    <img src="{{ url_for('static', filename=plot_url) }}" alt="CSV Plot" class="img-fluid mb-4">
-    <br>
-    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Upload Another File</a>
-  </div>
+<h2 class="text-3xl font-bold text-center mb-8">Maps and Graphs of Excess Deaths</h2>
+
+<div class="flex flex-col gap-12 items-center">
+
+    <!-- Map View -->
+    <div class="w-full max-w-6xl">
+        <h3 class="text-2xl font-semibold mb-4 text-center">Map View</h3>
+        <iframe src="{{ url_for('static', filename=plot_url) }}" width="100%" height="600" frameborder="0" style="border: none;"></iframe>
+    </div>
+
+    <!-- Line Graph View -->
+    <div class="w-full max-w-6xl">
+        <h3 class="text-2xl font-semibold mb-4 text-center">Time Series Graph</h3>
+        <iframe src="{{ url_for('static', filename=time_series_url) }}" width="100%" height="600" frameborder="0" style="border: none;"></iframe>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex justify-center gap-4 mt-8">
+      <a href="{{ url_for('main.upload_page') }}" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Upload Another File</a>
+      <a href="{{ url_for('main.index') }}" class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">Return to Home</a>
+    </div>
+
+
+</div>
 {% endblock %}

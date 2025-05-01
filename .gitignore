@@ -43,3 +43,10 @@ build/
 *.tmp
 
 app/__pycache__
+
+instance/data.db
+
+uploads/
+
+# Ignore all files in static/plot
+app/static/plots/*

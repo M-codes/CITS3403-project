@@ -1,11 +1,70 @@
+<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>INDEX</title>
+    <title>Dashboard - Infection Monitoring</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f4f6f8;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            max-width: 1000px;
+            margin: auto;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card a {
+            text-decoration: none;
+            color: #333;
+            font-size: 18px;
+        }
+    </style>
 </head>
 <body>
-    <h1>HOME</h1>
+    <h1>Infection Monitoring Dashboard</h1>
+
+    <div class="dashboard">
+        <div class="card">
+            <a href="{{ url_for('main.upload_page') }}">📄 Upload CSV File</a>
+        </div>
+        <div class="card">
+            <a href="{{ url_for('main.manual_entry') }}">✍️ Manual Data Entry</a>
+        </div>
+        <div class="card">
+            <a href="{{ url_for('main.data_table') }}">📊 View Data Table</a>
+        </div>
+        <div class="card">
+            <a href="{{ url_for('main.map_view') }}">🗺️ View Animated Map</a>
+        </div>
+        <div class="card">
+            <a href="#">💬 Forum</a>
+        </div>
+        <div class="card">
+            <a href="#">👤 Account Manager</a>
+        </div>
+        <div class="card">
+            <a href="#">📧 Email</a>
+        </div>
+    </div>
 </body>
 </html>

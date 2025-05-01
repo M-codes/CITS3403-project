@@ -365,7 +365,7 @@ def show_pie_chart():
     fig = px.pie(df, values='value', names='region', title='Excess Death Share by Region')
     path = os.path.join(current_app.static_folder, 'plots/pie_chart.html')
     fig.write_html(path)
-    return render_template('result.html', plot_url='plots/pie_chart.html')@bp.route('/upload_post', methods=['POST'])
+    return render_template('result.html', plot_url='plots/pie_chart.html')
 
 
 

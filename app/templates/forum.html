@@ -14,9 +14,39 @@
 
     <!-- Forum Container -->
     <div class="flex justify-center items-start mt-8">
-        <div class="w-full max-w-lg bg-white border rounded-lg p-6 shadow-md">
-            <h2 class="text-center text-xl font-semibold">Forum Placeholder</h2>
-            <p class="text-center text-gray-500 mt-4">This is where the forum content will be loaded.</p>
+        <div class="w-full max-w-5xl bg-white border rounded-lg p-6 shadow-md">
+            <h2 class="text-center text-xl font-semibold">Uploaded Posts</h2>
+            <div class="space-y-6 mt-4">
+                {% for post in posts %}
+                <div class="bg-white border rounded-lg p-6 shadow-md">
+                    <img src="{{ url_for('static', filename=post.plot_filename) }}" alt="Plot Image" class="w-full h-auto mb-4">
+                    <p class="text-gray-700"><strong>Email:</strong> {{ post.email }}</p>
+                    <p class="text-gray-700"><strong>Comment:</strong> {{ post.comment }}</p>
+                </div>
+                {% endfor %}
+                {% if posts|length == 0 %}
+                <p class="text-center text-gray-500">No posts available yet. Be the first to upload!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="flex justify-center items-start mt-8">
+
+    <!-- Upload Form -->
+    <div class="flex justify-center items-start mt-8">
+        <div class="w-full max-w-5xl bg-white border rounded-lg p-6 shadow-md">
+            <h2 class="text-center text-xl font-semibold">Upload a Post</h2>
+            <form action="{{ url_for('main.upload_post') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                <div>
+                    <label for="plot_image" class="block text-gray-700 font-semibold mb-2">Upload Plot (PNG)</label>
+                    <input type="file" name="plot_image" accept=".png" required class="w-full border p-2 rounded">
+                </div>
+                <div>
+                    <label for="comment" class="block text-gray-700 font-semibold mb-2">Comment</label>
+                    <textarea name="comment" rows="4" required class="w-full border p-2 rounded"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded">Upload Post</button>
+            </form>
         </div>
     </div>
 </body>

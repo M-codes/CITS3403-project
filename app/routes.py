@@ -7,6 +7,7 @@ import os
 
 from app import db
 from app.models import DataPoint
+from app.models import SharedPlot
 
 bp = Blueprint('main', __name__)
 
@@ -30,7 +31,8 @@ def upload_page():
 
 @bp.route('/forum')
 def forum():
-    return render_template("forum.html")
+    posts = SharedPlot.query.order_by(SharedPlot.id.desc()).all()
+    return render_template("forum.html", posts=posts)
 
 
 
@@ -279,9 +281,41 @@ def map_view():
 
     return render_template('result.html', plot_url='plots/map_plot.html')
 
+@bp.route('/upload_post', methods=['POST'])
+def upload_post():
+    if 'user_id' not in session:
+        flash("Please log in to upload a post.", 'warning')
+        return redirect(url_for('auth.login_page'))
 
+    file = request.files.get('plot_image')
+    comment = request.form.get('comment')
+    email = request.form.get('email')
 
+    if not file or not file.filename.endswith('.png'):
+        flash("Please upload a valid PNG file.", 'error')
+        return redirect(url_for('main.forum'))
 
+    if not email or not comment:
+        flash("Email and comment are required.", 'error')
+        return redirect(url_for('main.forum'))
 
+    # Save the file
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(current_app.static_folder, 'uploads', filename)
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    file.save(filepath)
+
+    # Save to the database
+    shared_plot = SharedPlot(
+        plot_filename=f'uploads/{filename}',
+        comment=comment,
+        email=email,
+        user_id=session['user_id']
+    )
+    db.session.add(shared_plot)
+    db.session.commit()
+
+    flash("Post uploaded successfully!", 'success')
+    return redirect(url_for('main.forum'))
 
 

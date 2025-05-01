@@ -16,3 +16,12 @@ class DataPoint(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     user = db.relationship('User', backref='datapoints')
+
+class SharedPlot(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    plot_filename = db.Column(db.String(255), nullable=False)  # Path to the .png file
+    comment = db.Column(db.Text, nullable=True)  # Optional comment
+    email = db.Column(db.String(120), nullable=False)  # Email of the user sharing the plot
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Associated user
+
+    user = db.relationship('User', backref='shared_plots', lazy=True)

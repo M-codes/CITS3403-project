@@ -15,13 +15,14 @@ def create_app():
     
     # Configs
     app.config.from_object(Config)  # <--- load config from the class
-
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
     
     CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
     
 
     # Ensure upload folder exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    os.makedirs(os.path.join(app.static_folder, 'uploads'), exist_ok=True)
 
     db.init_app(app)
     

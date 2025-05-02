@@ -52,7 +52,7 @@ def manual_entry():
             return redirect(url_for('main.manual_entry'))
 
         if region and date and pd.notnull(value):
-            exists = DataPoint.query.filter_by(region=region, date=date).first()
+            exists = DataPoint.query.filter_by(region=region, date=date, user_id=session['user_id']).first()
             if not exists:
                 point = DataPoint(
                     region=region,

@@ -13,6 +13,7 @@ body{
     align-items: center;
     min-height: 100vh;
     background: url(../assets/login.jpg) no-repeat;
+    padding-top: 60px; /* Prevent content from overlapping the header bar */
 
 }
 
@@ -115,3 +116,4 @@ body{
 .register-link p a:hover{
     text-decoration: underline;
 }
+

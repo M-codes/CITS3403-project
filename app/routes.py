@@ -35,9 +35,6 @@ def forum():
     return render_template("forum.html", posts=posts)
 
 
-
-from datetime import datetime
-
 @bp.route('/manual_entry', methods=['GET', 'POST'])
 def manual_entry():
     if request.method == 'POST':
@@ -360,18 +357,29 @@ def show_bar_graph():
 @bp.route('/pie_chart')
 def show_pie_chart():
     data = DataPoint.query.filter_by(user_id=session['user_id']).all()
+
+    # Convert to DataFrame
     df = pd.DataFrame([{'region': d.region, 'value': d.value} for d in data])
-    df = df.groupby('region').sum(numeric_only=True).reset_index()
-    fig = px.pie(df, values='value', names='region', title='Excess Death Share by Region')
+
+    # Group by region and sum the values
+    df = df.groupby('region', as_index=False).sum(numeric_only=True)
+
+    # Get Top 10 regions by total excess deaths
+    df_top10 = df.sort_values(by='value', ascending=False).head(10)
+
+    # Create pie chart
+    fig = px.pie(
+        df_top10,
+        values='value',
+        names='region',
+        title='Top 10 Regions by Total Excess Deaths'
+    )
+
+    # Save plot
     path = os.path.join(current_app.static_folder, 'plots/pie_chart.html')
     fig.write_html(path)
+    
     return render_template('result.html', plot_url='plots/pie_chart.html')
-
-
-
-
-
-
 
 @bp.route('/upload_post', methods=['POST'])
 def upload_post():

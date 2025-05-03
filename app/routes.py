@@ -334,12 +334,12 @@ def map_view():
         os.remove(map_path)
     fig.write_html(map_path)
 
-    return render_template('result.html', plot_url='plots/map_plot.html')
+    return render_template('result.html', plot_url='plots/map_plot.html',plot_type='map')
 
 @bp.route('/line_chart')
 def show_line_graph():
     # Same code as your existing line chart generation
-    return render_template('result.html', plot_url='plots/time_series_plot.html')
+    return render_template('result.html', plot_url='plots/time_series_plot.html',plot_type='line')
 
 @bp.route('/bar_chart')
 def show_bar_graph():
@@ -351,7 +351,7 @@ def show_bar_graph():
     fig = px.bar(df, x='region', y='value', title="Average Excess Deaths by Region")
     path = os.path.join(current_app.static_folder, 'plots/bar_chart.html')
     fig.write_html(path)
-    return render_template('result.html', plot_url='plots/bar_chart.html')
+    return render_template('result.html', plot_url='plots/bar_chart.html',plot_type='bar')
 
 
 @bp.route('/pie_chart')
@@ -379,7 +379,7 @@ def show_pie_chart():
     path = os.path.join(current_app.static_folder, 'plots/pie_chart.html')
     fig.write_html(path)
     
-    return render_template('result.html', plot_url='plots/pie_chart.html')
+    return render_template('result.html', plot_url='plots/pie_chart.html',plot_type='pie')
 
 @bp.route('/upload_post', methods=['POST'])
 def upload_post():

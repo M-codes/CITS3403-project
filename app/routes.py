@@ -136,11 +136,11 @@ def upload():
             db.session.commit()
 
         except Exception as e:
-            flash("Failed to read or process CSV file.", 'error')
+            flash("Failed to read or process CSV file.", 'upload:error')
             return redirect(url_for('main.upload_page'))
 
         if not all_data:
-            flash("No usable data found in the file.", 'warning')
+            flash("No usable data found in the file.", 'upload:warning')
             return redirect(url_for('main.upload_page'))
 
         # After the upload, let's base the plot on the entire user's data (from the DB)
@@ -216,10 +216,10 @@ def upload():
         # --- Pass both plots to the result page ---
         # Store latest uploaded data in session (or in temp DB if large)
         session['upload_success'] = True
-        flash("Upload successful. Please select a graph to view.", "success")
+        flash("Upload successful. Please select a graph to view.", "upload:success")
         return redirect(url_for('main.select_graph'))
 
-    flash("Invalid file format. Please upload a CSV file.", 'error')
+    flash("Invalid file format. Please upload a CSV file.", 'upload:error')
     return redirect(url_for('main.upload_page'))
 
 @bp.route('/select_graph', methods=['GET', 'POST'])

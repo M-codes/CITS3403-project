@@ -230,16 +230,28 @@ def select_graph():
 
     if request.method == 'POST':
         graph_type = request.form.get('graph_type')
+        date = request.form.get('date')
+
         if graph_type == 'map':
             return redirect(url_for('main.map_view'))
         elif graph_type == 'line':
             return redirect(url_for('main.show_line_graph'))
         elif graph_type == 'bar':
-            return redirect(url_for('main.show_bar_graph'))
+            return redirect(url_for('main.show_bar_graph', date=date))
         elif graph_type == 'pie':
-            return redirect(url_for('main.show_pie_chart'))
+            return redirect(url_for('main.show_pie_chart', date=date))
 
-    return render_template('select_graph.html')
+    # 👇 Get distinct dates
+    all_dates = (
+        db.session.query(DataPoint.date)
+        .filter_by(user_id=session['user_id'])
+        .distinct()
+        .order_by(DataPoint.date)
+        .all()
+    )
+    unique_dates = [d[0] for d in all_dates]  # d is a tuple like ('2021-05-01',)
+
+    return render_template('select_graph.html', available_dates=unique_dates)
 
 @bp.route('/manage_data', methods=['GET', 'POST'])
 def manage_data():
@@ -343,43 +355,59 @@ def show_line_graph():
 
 @bp.route('/bar_chart')
 def show_bar_graph():
-    # Example bar chart
-    data = DataPoint.query.filter_by(user_id=session['user_id']).all()
+    selected_date = request.args.get('date')  # Expecting 'YYYY-MM-DD'
+    
+    query = DataPoint.query.filter_by(user_id=session['user_id'])
+    if selected_date:
+        query = query.filter_by(date=selected_date)
+
+    data = query.all()
     df = pd.DataFrame([{'region': d.region, 'value': d.value} for d in data])
+
+    if df.empty:
+        flash("No data available for the selected date.", "warning")
+        return redirect(url_for('main.select_graph'))
+
     df = df.groupby('region').mean(numeric_only=True).reset_index()
 
-    fig = px.bar(df, x='region', y='value', title="Average Excess Deaths by Region")
+    fig = px.bar(df, x='region', y='value', title=f"Average Excess Deaths by Region ({selected_date})")
     path = os.path.join(current_app.static_folder, 'plots/bar_chart.html')
     fig.write_html(path)
-    return render_template('result.html', plot_url='plots/bar_chart.html',plot_type='bar')
+    
+    return render_template('result.html', plot_url='plots/bar_chart.html', plot_type='bar')
+
 
 
 @bp.route('/pie_chart')
 def show_pie_chart():
-    data = DataPoint.query.filter_by(user_id=session['user_id']).all()
+    selected_date = request.args.get('date')  # Expecting 'YYYY-MM-DD'
 
-    # Convert to DataFrame
+    query = DataPoint.query.filter_by(user_id=session['user_id'])
+    if selected_date:
+        query = query.filter_by(date=selected_date)
+
+    data = query.all()
     df = pd.DataFrame([{'region': d.region, 'value': d.value} for d in data])
 
-    # Group by region and sum the values
-    df = df.groupby('region', as_index=False).sum(numeric_only=True)
+    if df.empty:
+        flash("No data available for the selected date.", "warning")
+        return redirect(url_for('main.select_graph'))
 
-    # Get Top 10 regions by total excess deaths
+    df = df.groupby('region', as_index=False).sum(numeric_only=True)
     df_top10 = df.sort_values(by='value', ascending=False).head(10)
 
-    # Create pie chart
     fig = px.pie(
         df_top10,
         values='value',
         names='region',
-        title='Top 10 Regions by Total Excess Deaths'
+        title=f'Top 10 Regions by Total Excess Deaths ({selected_date})'
     )
 
-    # Save plot
     path = os.path.join(current_app.static_folder, 'plots/pie_chart.html')
     fig.write_html(path)
     
-    return render_template('result.html', plot_url='plots/pie_chart.html',plot_type='pie')
+    return render_template('result.html', plot_url='plots/pie_chart.html', plot_type='pie')
+
 
 @bp.route('/upload_post', methods=['POST'])
 def upload_post():

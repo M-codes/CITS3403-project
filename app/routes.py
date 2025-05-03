@@ -53,7 +53,7 @@ def manual_entry():
             upper = float(upper) if upper else None
             confirmed = float(confirmed) if confirmed else None
         except ValueError:
-            flash("Invalid numeric input or date format.", 'error')
+            flash("Invalid numeric input or date format.", 'manual_entry:error')
             return redirect(url_for('main.manual_entry'))
 
         if region and date and pd.notnull(value):
@@ -70,12 +70,12 @@ def manual_entry():
                 )
                 db.session.add(point)
                 db.session.commit()
-                flash(f"Data for {region} on {date_str} added successfully.", 'success')
+                flash(f"Data for {region} on {date_str} added successfully.", 'manual_entry:success')
                 return redirect(url_for('main.manual_entry'))
             else:
-                flash("Data point already exists.", 'warning')
+                flash("Data point already exists.", 'manual_entry:warning')
                 return redirect(url_for('main.manual_entry'))
-        flash("Missing or invalid input.", 'error')
+        flash("Missing or invalid input.", 'manual_entry:error')
         return redirect(url_for('main.manual_entry'))
 
     # GET: show form

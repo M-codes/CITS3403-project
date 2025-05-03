@@ -10,6 +10,7 @@
   {% if messages %}
     <div class="max-w-xl mx-auto space-y-2 mb-6">
       {% for category, message in messages %}
+      {% if 'manual_entry' in category %} 
         <div class="flex items-center justify-between p-4 rounded-md text-white shadow-md transition-all duration-300 
             {{ 'bg-green-600' if category == 'success' else 
                'bg-red-600' if category == 'error' else 
@@ -18,6 +19,7 @@
           <span>{{ message }}</span>
           <button onclick="this.parentElement.remove()" class="ml-4 text-white font-bold">×</button>
         </div>
+        {% endif %}
       {% endfor %}
     </div>
   {% endif %}

@@ -35,9 +35,6 @@ def forum():
     return render_template("forum.html", posts=posts)
 
 
-
-from datetime import datetime
-
 @bp.route('/manual_entry', methods=['GET', 'POST'])
 def manual_entry():
     if request.method == 'POST':
@@ -56,11 +53,11 @@ def manual_entry():
             upper = float(upper) if upper else None
             confirmed = float(confirmed) if confirmed else None
         except ValueError:
-            flash("Invalid numeric input or date format.", 'error')
+            flash("Invalid numeric input or date format.", 'manual_entry:error')
             return redirect(url_for('main.manual_entry'))
 
         if region and date and pd.notnull(value):
-            exists = DataPoint.query.filter_by(region=region, date=date).first()
+            exists = DataPoint.query.filter_by(region=region, date=date, user_id=session['user_id']).first()
             if not exists:
                 point = DataPoint(
                     region=region,
@@ -73,12 +70,12 @@ def manual_entry():
                 )
                 db.session.add(point)
                 db.session.commit()
-                flash(f"Data for {region} on {date_str} added successfully.", 'success')
+                flash(f"Data for {region} on {date_str} added successfully.", 'manual_entry:success')
                 return redirect(url_for('main.manual_entry'))
             else:
-                flash("Data point already exists.", 'warning')
+                flash("Data point already exists.", 'manual_entry:warning')
                 return redirect(url_for('main.manual_entry'))
-        flash("Missing or invalid input.", 'error')
+        flash("Missing or invalid input.", 'manual_entry:error')
         return redirect(url_for('main.manual_entry'))
 
     # GET: show form
@@ -139,11 +136,11 @@ def upload():
             db.session.commit()
 
         except Exception as e:
-            flash("Failed to read or process CSV file.", 'error')
+            flash("Failed to read or process CSV file.", 'upload:error')
             return redirect(url_for('main.upload_page'))
 
         if not all_data:
-            flash("No usable data found in the file.", 'warning')
+            flash("No usable data found in the file.", 'upload:warning')
             return redirect(url_for('main.upload_page'))
 
         # After the upload, let's base the plot on the entire user's data (from the DB)
@@ -219,10 +216,10 @@ def upload():
         # --- Pass both plots to the result page ---
         # Store latest uploaded data in session (or in temp DB if large)
         session['upload_success'] = True
-        flash("Upload successful. Please select a graph to view.", "success")
+        flash("Upload successful. Please select a graph to view.", "upload:success")
         return redirect(url_for('main.select_graph'))
 
-    flash("Invalid file format. Please upload a CSV file.", 'error')
+    flash("Invalid file format. Please upload a CSV file.", 'upload:error')
     return redirect(url_for('main.upload_page'))
 
 @bp.route('/select_graph', methods=['GET', 'POST'])
@@ -233,16 +230,28 @@ def select_graph():
 
     if request.method == 'POST':
         graph_type = request.form.get('graph_type')
+        date = request.form.get('date')
+
         if graph_type == 'map':
             return redirect(url_for('main.map_view'))
         elif graph_type == 'line':
             return redirect(url_for('main.show_line_graph'))
         elif graph_type == 'bar':
-            return redirect(url_for('main.show_bar_graph'))
+            return redirect(url_for('main.show_bar_graph', date=date))
         elif graph_type == 'pie':
-            return redirect(url_for('main.show_pie_chart'))
+            return redirect(url_for('main.show_pie_chart', date=date))
 
-    return render_template('select_graph.html')
+    # 👇 Get distinct dates
+    all_dates = (
+        db.session.query(DataPoint.date)
+        .filter_by(user_id=session['user_id'])
+        .distinct()
+        .order_by(DataPoint.date)
+        .all()
+    )
+    unique_dates = [d[0] for d in all_dates]  # d is a tuple like ('2021-05-01',)
+
+    return render_template('select_graph.html', available_dates=unique_dates)
 
 @bp.route('/manage_data', methods=['GET', 'POST'])
 def manage_data():
@@ -337,40 +346,67 @@ def map_view():
         os.remove(map_path)
     fig.write_html(map_path)
 
-    return render_template('result.html', plot_url='plots/map_plot.html')
+    return render_template('result.html', plot_url='plots/map_plot.html',plot_type='map')
 
 @bp.route('/line_chart')
 def show_line_graph():
     # Same code as your existing line chart generation
-    return render_template('result.html', plot_url='plots/time_series_plot.html')
+    return render_template('result.html', plot_url='plots/time_series_plot.html',plot_type='line')
 
 @bp.route('/bar_chart')
 def show_bar_graph():
-    # Example bar chart
-    data = DataPoint.query.filter_by(user_id=session['user_id']).all()
+    selected_date = request.args.get('date')  # Expecting 'YYYY-MM-DD'
+    
+    query = DataPoint.query.filter_by(user_id=session['user_id'])
+    if selected_date:
+        query = query.filter_by(date=selected_date)
+
+    data = query.all()
     df = pd.DataFrame([{'region': d.region, 'value': d.value} for d in data])
+
+    if df.empty:
+        flash("No data available for the selected date.", "warning")
+        return redirect(url_for('main.select_graph'))
+
     df = df.groupby('region').mean(numeric_only=True).reset_index()
 
-    fig = px.bar(df, x='region', y='value', title="Average Excess Deaths by Region")
+    fig = px.bar(df, x='region', y='value', title=f"Average Excess Deaths by Region ({selected_date})")
     path = os.path.join(current_app.static_folder, 'plots/bar_chart.html')
     fig.write_html(path)
-    return render_template('result.html', plot_url='plots/bar_chart.html')
+    
+    return render_template('result.html', plot_url='plots/bar_chart.html', plot_type='bar')
+
 
 
 @bp.route('/pie_chart')
 def show_pie_chart():
-    data = DataPoint.query.filter_by(user_id=session['user_id']).all()
+    selected_date = request.args.get('date')  # Expecting 'YYYY-MM-DD'
+
+    query = DataPoint.query.filter_by(user_id=session['user_id'])
+    if selected_date:
+        query = query.filter_by(date=selected_date)
+
+    data = query.all()
     df = pd.DataFrame([{'region': d.region, 'value': d.value} for d in data])
-    df = df.groupby('region').sum(numeric_only=True).reset_index()
-    fig = px.pie(df, values='value', names='region', title='Excess Death Share by Region')
+
+    if df.empty:
+        flash("No data available for the selected date.", "warning")
+        return redirect(url_for('main.select_graph'))
+
+    df = df.groupby('region', as_index=False).sum(numeric_only=True)
+    df_top10 = df.sort_values(by='value', ascending=False).head(10)
+
+    fig = px.pie(
+        df_top10,
+        values='value',
+        names='region',
+        title=f'Top 10 Regions by Total Excess Deaths ({selected_date})'
+    )
+
     path = os.path.join(current_app.static_folder, 'plots/pie_chart.html')
     fig.write_html(path)
-    return render_template('result.html', plot_url='plots/pie_chart.html')
-
-
-
-
-
+    
+    return render_template('result.html', plot_url='plots/pie_chart.html', plot_type='pie')
 
 
 @bp.route('/upload_post', methods=['POST'])

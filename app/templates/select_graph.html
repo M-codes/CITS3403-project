@@ -8,11 +8,11 @@
   <input type="hidden" name="date" id="date_input">
 
   <div class="flex flex-wrap justify-center gap-6">
-    <button type="submit" onclick="selectGraph('map')" class="w-52 h-40 bg-blue-500 text-white text-xl font-semibold rounded-2xl shadow-md hover:bg-blue-600 transition duration-300 flex flex-col items-center justify-center">
+    <button type="button" onclick="selectGraph('map')" class="w-52 h-40 bg-blue-500 text-white text-xl font-semibold rounded-2xl shadow-md hover:bg-blue-600 transition duration-300 flex flex-col items-center justify-center">
       <div class="text-4xl mb-2">🗺️</div>
       Map
     </button>
-    <button type="submit" onclick="selectGraph('line')" class="w-52 h-40 bg-green-500 text-white text-xl font-semibold rounded-2xl shadow-md hover:bg-green-600 transition duration-300 flex flex-col items-center justify-center">
+    <button type="button" onclick="selectGraph('line')" class="w-52 h-40 bg-green-500 text-white text-xl font-semibold rounded-2xl shadow-md hover:bg-green-600 transition duration-300 flex flex-col items-center justify-center">
       <div class="text-4xl mb-2">📈</div>
       Line
     </button>
@@ -46,6 +46,12 @@
 
 <script>
   let selectedGraphType = null;
+
+  function selectGraph(type) {
+    document.getElementById('graph_type_input').value = type;
+    document.getElementById('date_input').value = '';
+    document.getElementById('graphForm').submit();
+  }
 
   function openModal(type) {
     selectedGraphType = type;

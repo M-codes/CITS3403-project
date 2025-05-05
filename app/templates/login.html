@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
 </head>
 <body class="min-h-screen flex">
     <!-- Left Side: Info Panel -->
@@ -26,6 +28,7 @@
     <!-- Right Side: Login Form -->
 <div class="w-1/2 flex items-center justify-center p-8 bg-gray-100">
     <div class="w-full max-w-md bg-white p-8 rounded shadow-md">
+        <div class="g-recaptcha mb-4" data-sitekey="6LfnCi8rAAAAAMrlqvYzt9B1jAMEwHIr5FWQPA03"></div>
         <h2 class="text-2xl font-bold mb-6 text-center">Log In</h2>
 
         <!-- Wrap inputs in a form -->
@@ -50,12 +53,17 @@
 
         const email = $('#email').val();
         const password = $('#password').val();
+        const recaptcha = grecaptcha.getResponse();
+        if (!recaptcha) {
+            alert('Please verify you are not a robot.');
+            return;
+        }
 
         $.ajax({
             url: '/login',
             method: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({ email, password }),
+            data: JSON.stringify({ email, password, recaptcha }),
             success: function (res) {
                 alert(res.message);
                 window.location.href = '/home'; // Redirect on success

@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, session, render_template, flash, 
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db  # Import the db object from __init__.py
 from flask import current_app
-
+import requests
 # Create the blueprint
 auth_bp = Blueprint('auth', __name__)
 
@@ -85,6 +85,21 @@ def forgot_password():
 
     return render_template('forgot_password.html')
 
+@auth_bp.route('/api/login', methods=['POST'])
+def api_login():
+    recaptcha_response = request.json.get('recaptcha_token')
+    secret_key = '6LfnCi8rAAAAAMHL8op0mE8gL-gXKyXjoLTuckbX'
+
+    verify_url = 'https://www.google.com/recaptcha/api/siteverify'
+    payload = {
+        'secret': secret_key,
+        'response': recaptcha_response
+    }
+
+    result = requests.post(verify_url, data=payload).json()
+
+    if not result.get('success'):
+        return jsonify({'message': 'reCAPTCHA failed. Try again.'}), 400
 
 # Home route
 @auth_bp.route('/')

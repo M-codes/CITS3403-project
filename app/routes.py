@@ -464,3 +464,107 @@ def share_data():
         users=users,
         data_points=data_points
     )
+
+def get_shared_datapoints(user_id):
+    shares = (
+        DataShare.query
+        .filter_by(recipient_id=user_id)
+        .join(DataPoint, DataShare.data_id == DataPoint.id)
+        .with_entities(
+            DataPoint.id,
+            DataPoint.region,
+            DataPoint.date,
+            DataPoint.value
+        )
+        .all()
+    )
+    # Convert to list of dicts (or DataFrame) for plotting
+    return [
+        {"id": d.id, "region": d.region, "date": d.date, "value": d.value}
+        for d in shares
+    ]
+
+@bp.route('/select_shared_graph', methods=['GET', 'POST'])
+def select_shared_graph():
+    if 'user_id' not in session:
+        flash("Please log in first.", "warning")
+        return redirect(url_for('auth.login'))
+
+    user_id = session['user_id']
+
+    if request.method == 'POST':
+        graph_type = request.form['graph_type']
+        date       = request.form.get('date')
+        # pass a flag so the downstream view knows these are shared points
+        return redirect(url_for('main.shared_map_view', date=date) if graph_type=='map'
+                            else url_for('main.show_shared_'+graph_type, date=date))
+
+    # build a list of distinct dates from shared data
+    shared = get_shared_datapoints(user_id)
+    dates = sorted({d['date'] for d in shared})
+    return render_template('select_shared_graph.html', available_dates=dates)
+
+@bp.route('/map')
+def shared_map_view():
+    user_id = session['user_id']
+    date_str = request.args.get('date')
+
+    df = pd.DataFrame(get_shared_datapoints(user_id))
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
+    df = df.dropna(subset=['date'])
+    df = df.sort_values(by='date')
+
+    fig = px.choropleth(
+        df,
+        locations="region",
+        locationmode="country names",
+        color="value",
+        hover_name="region",
+        animation_frame="date",
+        title=f"Shared Data: Excess Deaths {date_str}",
+        range_color=[df['value'].min(), df['value'].max()]
+    )
+    path = os.path.join(current_app.static_folder, 'plots', 'shared_map.html')
+    fig.write_html(path)
+    return render_template('result.html', plot_url='plots/shared_map.html', plot_type='map')
+
+@bp.route('/line')
+def show_shared_line():
+    user_id = session['user_id']
+    df = pd.DataFrame(get_shared_datapoints(user_id))
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
+    fig = px.line(df, x='date', y='value', color='region', title='Shared Data: Time Series')
+    path = os.path.join(current_app.static_folder, 'plots', 'shared_time_series_plot.html')
+    fig.write_html(path)
+    return render_template('result.html', plot_url='plots/shared_time_series_plot.html', plot_type='line')
+
+
+@bp.route('/bar')
+def show_shared_bar():
+    user_id = session['user_id']
+    date_str = request.args.get('date')
+    df = pd.DataFrame(get_shared_datapoints(user_id))
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
+    if date_str:
+        df = df[df['date'] == pd.to_datetime(date_str)]
+    df = df.groupby('region', as_index=False).mean(numeric_only=True)
+    fig = px.bar(df, x='region', y='value', title=f"Shared: Avg Excess Deaths ({date_str})")
+    path = os.path.join(current_app.static_folder, 'plots', 'shared_bar.html')
+    fig.write_html(path)
+    return render_template('result.html', plot_url='plots/shared_bar.html', plot_type='bar')
+
+
+@bp.route('/pie')
+def show_shared_pie():
+    user_id = session['user_id']
+    date_str = request.args.get('date')
+    df = pd.DataFrame(get_shared_datapoints(user_id))
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
+    if date_str:
+        df = df[df['date'] == pd.to_datetime(date_str)]
+    df = df.groupby('region', as_index=False).sum(numeric_only=True)
+    df_top10 = df.nlargest(10, 'value')
+    fig = px.pie(df_top10, values='value', names='region', title=f"Shared: Top 10 Excess Deaths ({date_str})")
+    path = os.path.join(current_app.static_folder, 'plots', 'shared_pie.html')
+    fig.write_html(path)
+    return render_template('result.html', plot_url='plots/shared_pie.html', plot_type='pie')

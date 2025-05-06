@@ -6,7 +6,7 @@ import plotly.express as px
 import os
 
 from app import db
-from app.models import DataPoint
+from app.models import DataPoint,DataShare, User
 from app.models import SharedPlot
 
 bp = Blueprint('main', __name__)
@@ -15,14 +15,40 @@ bp = Blueprint('main', __name__)
 def index():
     return render_template("index.html")
 
+
 @bp.route('/data_table')
 def data_table():
     if 'user_id' not in session:
         flash("Please log in to view your data.", 'warning')
         return redirect(url_for('auth.home'))
-    
-    data = DataPoint.query.filter_by(user_id=session['user_id']).order_by(DataPoint.date.desc()).all()
-    return render_template('data_table.html', data=data)
+
+    # 1) Your own DataPoints
+    my_data = (
+        DataPoint.query
+        .filter_by(user_id=session['user_id'])
+        .order_by(DataPoint.date.desc())
+        .all()
+    )
+
+    # 2) All DataShares _to_ you, eager‐loading the point and the owner
+    shared_shares = (
+        DataShare.query
+        .filter_by(recipient_id=session['user_id'])
+        .join(DataPoint, DataShare.data_id == DataPoint.id)
+        .join(User,    DataShare.owner_id == User.id)
+        .options(
+            db.contains_eager(DataShare.data_point),
+            db.contains_eager(DataShare.owner)
+        )
+        .order_by(DataShare.shared_at.desc())
+        .all()
+    )
+
+    return render_template(
+        'data_table.html',
+        my_data=my_data,
+        shared_shares=shared_shares
+    )
 
 
 @bp.route('/upload_page')
@@ -446,4 +472,52 @@ def upload_post():
     flash("Post uploaded successfully!", 'success')
     return redirect(url_for('main.forum'))
 
+@bp.route('/share_data', methods=['GET', 'POST'])
+def share_data():
+    if 'user_id' not in session:
+        flash('Please log in to share data.', 'warning')
+        return redirect(url_for('auth.login'))
 
+    owner_id = session['user_id']
+    # Load existing users for dropdown
+    users = User.query.filter(User.id != owner_id).order_by(User.email).all()
+    # Load owner's data items
+    data_points = DataPoint.query.filter_by(user_id=owner_id).order_by(DataPoint.date.desc()).all()
+
+    if request.method == 'POST':
+        recipient_email = request.form.get('recipient_email')
+        selected_ids = request.form.getlist('data_ids')  # list of data_point.id strings
+
+        if not recipient_email or not selected_ids:
+            flash('Select a user and at least one data item.', 'error')
+            return redirect(url_for('main.share_data'))
+
+        recipient = User.query.filter_by(email=recipient_email).first()
+        if not recipient:
+            flash('User not found.', 'error')
+            return redirect(url_for('main.share_data'))
+
+        # Create share records
+        for dp_id in selected_ids:
+            # avoid duplicates
+            exists = DataShare.query.filter_by(
+                owner_id=owner_id,
+                recipient_id=recipient.id,
+                data_id=int(dp_id)
+            ).first()
+            if not exists:
+                share = DataShare(
+                    owner_id=owner_id,
+                    recipient_id=recipient.id,
+                    data_id=int(dp_id)
+                )
+                db.session.add(share)
+        db.session.commit()
+        flash(f"Shared {len(selected_ids)} items with {recipient.email}.", 'success')
+        return redirect(url_for('main.share_data'))
+
+    return render_template(
+        'share_data.html',
+        users=users,
+        data_points=data_points
+    )

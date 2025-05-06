@@ -2,49 +2,99 @@
 {% block title %}Data Table{% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold mb-6 text-center">All Recorded Data</h1>
-
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 
-<div class="overflow-x-auto max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md">
-    <table id="dataTable" class="min-w-full text-sm text-gray-700">
-        <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+<div class="max-w-6xl mx-auto space-y-12">
+
+  {# === My Data Points === #}
+  <section class="bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-xl font-semibold mb-4">My Data Points</h2>
+    {% if my_data %}
+      <div class="overflow-x-auto">
+        <table id="ownTable" class="min-w-full text-sm text-gray-700">
+          <thead class="text-xs text-gray-700 uppercase bg-gray-100">
             <tr>
-                <th class="px-6 py-3">Country</th>
-                <th class="px-6 py-3">Date</th>
-                <th class="px-6 py-3">Excess Deaths (Estimate)</th>
-                <th class="px-6 py-3">Lower Bound</th>
-                <th class="px-6 py-3">Upper Bound</th>
-                <th class="px-6 py-3">Confirmed Deaths</th>
+              <th class="px-4 py-2">Country</th>
+              <th class="px-4 py-2">Date</th>
+              <th class="px-4 py-2">Excess Deaths</th>
+              <th class="px-4 py-2">Lower Bound</th>
+              <th class="px-4 py-2">Upper Bound</th>
+              <th class="px-4 py-2">Confirmed Deaths</th>
             </tr>
-        </thead>
-        <tbody>
-            {% for d in data %}
+          </thead>
+          <tbody>
+          {% for d in my_data %}
             <tr class="bg-white border-b hover:bg-gray-50">
-                <td class="px-6 py-4">{{ d.region }}</td>
-                <td class="px-6 py-4">{{ d.date }}</td>
-                <td class="px-6 py-4">{{ d.value }}</td>
-                <td class="px-6 py-4">{{ d.lower_bound or "N/A" }}</td>
-                <td class="px-6 py-4">{{ d.upper_bound or "N/A" }}</td>
-                <td class="px-6 py-4">{{ d.confirmed_deaths or "N/A" }}</td>
+              <td class="px-4 py-3">{{ d.region }}</td>
+              <td class="px-4 py-3">{{ d.date }}</td>
+              <td class="px-4 py-3">{{ d.value }}</td>
+              <td class="px-4 py-3">{{ d.lower_bound or "N/A" }}</td>
+              <td class="px-4 py-3">{{ d.upper_bound or "N/A" }}</td>
+              <td class="px-4 py-3">{{ d.confirmed_deaths or "N/A" }}</td>
             </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-<!-- Buttons -->
-<div class="flex justify-center gap-4 mt-8">
-    <a href="{{ url_for('main.index') }}" class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">Return to Home</a>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-gray-600">You haven’t added any data yet. 
+         <a href="{{ url_for('main.manual_entry') }}" class="text-blue-600 hover:underline">Add some now</a>.
+      </p>
+    {% endif %}
+  </section>
+
+  {# === Data Shared With Me === #}
+  <section class="bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-xl font-semibold mb-4">Data Shared With Me</h2>
+    {% if shared_shares %}
+      <div class="overflow-x-auto">
+        <table id="sharedTable" class="min-w-full text-sm text-gray-700">
+          <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+            <tr>
+              <th class="px-4 py-2">Country</th>
+              <th class="px-4 py-2">Date</th>
+              <th class="px-4 py-2">Excess Deaths</th>
+              <th class="px-4 py-2">Lower Bound</th>
+              <th class="px-4 py-2">Upper Bound</th>
+              <th class="px-4 py-2">Confirmed Deaths</th>
+              <th class="px-4 py-2">Shared By</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for share in shared_shares %}
+            {% set d = share.data_point %}
+            <tr class="bg-white border-b hover:bg-gray-50">
+              <td class="px-4 py-3">{{ d.region }}</td>
+              <td class="px-4 py-3">{{ d.date }}</td>
+              <td class="px-4 py-3">{{ d.value }}</td>
+              <td class="px-4 py-3">{{ d.lower_bound or "N/A" }}</td>
+              <td class="px-4 py-3">{{ d.upper_bound or "N/A" }}</td>
+              <td class="px-4 py-3">{{ d.confirmed_deaths or "N/A" }}</td>
+              <td class="px-4 py-3">{{ share.owner.email }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-gray-600">No one has shared data with you yet.</p>
+    {% endif %}
+  </section>
+
+  <div class="flex justify-center">
+    <a href="{{ url_for('main.index') }}"
+       class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+      Return to Home
+    </a>
   </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script>
-    $(document).ready(function() {
-        $('#dataTable').DataTable({
-            order: [[1, 'desc']], // Sort by Date descending
-            responsive: true
-        });
-    });
+  $(function() {
+    $('#ownTable').DataTable({ order:[[1,'desc']], responsive:true, paging:false, info:false, searching:false });
+    $('#sharedTable').DataTable({ order:[[1,'desc']], responsive:true, paging:false, info:false, searching:false });
+  });
 </script>
 {% endblock %}

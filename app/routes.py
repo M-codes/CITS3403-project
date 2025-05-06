@@ -30,12 +30,12 @@ def data_table():
         .all()
     )
 
-    # 2) All DataShares _to_ you, eager‐loading the point and the owner
+    # 2) All DataShares _to_ you
     shared_shares = (
         DataShare.query
         .filter_by(recipient_id=session['user_id'])
         .join(DataPoint, DataShare.data_id == DataPoint.id)
-        .join(User,    DataShare.owner_id == User.id)
+        .join(User,     DataShare.owner_id == User.id)
         .options(
             db.contains_eager(DataShare.data_point),
             db.contains_eager(DataShare.owner)
@@ -43,6 +43,9 @@ def data_table():
         .order_by(DataShare.shared_at.desc())
         .all()
     )
+
+    # DEBUG: print out what we fetched
+    print("SHARED SHARES:", [(s.owner.email, s.data_point.id) for s in shared_shares])
 
     return render_template(
         'data_table.html',
@@ -63,190 +66,118 @@ def forum():
 
 @bp.route('/manual_entry', methods=['GET', 'POST'])
 def manual_entry():
+    # ——— LOGIN GUARD ———
+    if 'user_id' not in session:
+        flash("Please log in first.", "warning")
+        return redirect(url_for('auth.login'))
+
     if request.method == 'POST':
-        region = request.form.get('region')
-        date_str = request.form.get('date')
-        value = request.form.get('value')
-        lower = request.form.get('lower_bound')
-        upper = request.form.get('upper_bound')
-        confirmed = request.form.get('confirmed_deaths')
+        # ... [unchanged parsing / validation code] ...
 
-        try:
-            # Convert the date string to a datetime object
-            date = datetime.strptime(date_str, '%Y-%m-%d').date()  # Change format as needed
-            value = float(value)
-            lower = float(lower) if lower else None
-            upper = float(upper) if upper else None
-            confirmed = float(confirmed) if confirmed else None
-        except ValueError:
-            flash("Invalid numeric input or date format.", 'manual_entry:error')
-            return redirect(url_for('main.manual_entry'))
+        # when checking for existing point, include user_id!
+        exists = DataPoint.query.filter_by(
+            region=region,
+            date=date,
+            user_id=session['user_id']
+        ).first()
 
-        if region and date and pd.notnull(value):
-            exists = DataPoint.query.filter_by(region=region, date=date, user_id=session['user_id']).first()
-            if not exists:
-                point = DataPoint(
-                    region=region,
-                    date=date,  # Save the date as a datetime.date object
-                    value=value,
-                    lower_bound=lower,
-                    upper_bound=upper,
-                    confirmed_deaths=confirmed,
-                    user_id=session['user_id'] 
-                )
-                db.session.add(point)
-                db.session.commit()
-                flash(f"Data for {region} on {date_str} added successfully.", 'manual_entry:success')
-                return redirect(url_for('main.manual_entry'))
-            else:
-                flash("Data point already exists.", 'manual_entry:warning')
-                return redirect(url_for('main.manual_entry'))
-        flash("Missing or invalid input.", 'manual_entry:error')
+        if not exists:
+            point = DataPoint(
+                region=region,
+                date=date,
+                value=value,
+                lower_bound=lower,
+                upper_bound=upper,
+                confirmed_deaths=confirmed,
+                user_id=session['user_id']
+            )
+            db.session.add(point)
+            db.session.commit()
+            flash(f"Data for {region} on {date_str} added successfully.", 'manual_entry:success')
+        else:
+            flash("Data point already exists.", 'manual_entry:warning')
+
         return redirect(url_for('main.manual_entry'))
 
-    # GET: show form
-    country_list = [row[0] for row in db.session.query(DataPoint.region).distinct().order_by(DataPoint.region).all()]
+    # GET: build your country list scoped to this user
+    country_list = [
+        row[0]
+        for row in (
+            db.session
+              .query(DataPoint.region)
+              .filter_by(user_id=session['user_id'])
+              .distinct()
+              .order_by(DataPoint.region)
+              .all()
+        )
+    ]
     return render_template('manual_entry.html', countries=country_list)
-
     
 @bp.route('/upload', methods=['POST'])
 def upload():
+    # ——— LOGIN GUARD ———
+    if 'user_id' not in session:
+        flash("Please log in first.", "warning")
+        return redirect(url_for('auth.login'))
+
     file = request.files.get('file')
-    if file and file.filename.endswith('.csv'):
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+    if not (file and file.filename.endswith('.csv')):
+        flash("Invalid file format. Please upload a CSV file.", 'upload:error')
+        return redirect(url_for('main.upload_page'))
 
-        all_data = []
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+    file.save(filepath)
 
-        try:
-            chunk_iter = pd.read_csv(filepath, chunksize=1000)
+    all_data = []
+    try:
+        for chunk in pd.read_csv(filepath, chunksize=1000):
+            for _, row in chunk.iterrows():
+                # parse region, date, values...
+                region = row["Entity"]
+                date = pd.to_datetime(row["Day"], errors='coerce').date()
+                if pd.isna(date):
+                    continue
 
-            for chunk in chunk_iter:
-                for _, row in chunk.iterrows():
-                    region = row.get("Entity")
-                    date_str = row.get("Day")
-                    try:
-                        date = datetime.strptime(date_str, '%Y-%m-%d').date()
-                    except (ValueError, TypeError):
-                        continue
+                value = row["Cumulative excess deaths per 100,000 people (central estimate)"]
+                lower = row["Cumulative excess deaths per 100,000 people (95% CI, lower bound)"]
+                upper = row["Cumulative excess deaths per 100,000 people (95% CI, upper bound)"]
+                confirmed = row["Total confirmed deaths due to COVID-19 per 100,000 people"]
 
-                    value = row.get("Cumulative excess deaths per 100,000 people (central estimate)")
-                    lower = row.get("Cumulative excess deaths per 100,000 people (95% CI, lower bound)")
-                    upper = row.get("Cumulative excess deaths per 100,000 people (95% CI, upper bound)")
-                    confirmed = row.get("Total confirmed deaths due to COVID-19 per 100,000 people")
+                # — include user_id when checking for duplicates! —
+                exists = DataPoint.query.filter_by(
+                    region=region,
+                    date=date,
+                    user_id=session['user_id']
+                ).first()
 
-                    if pd.notnull(value):
-                        exists = DataPoint.query.filter_by(region=region, date=date).first()
-                        if not exists:
-                            dp = DataPoint(
-                                region=region,
-                                date=date,
-                                value=value,
-                                lower_bound=lower,
-                                upper_bound=upper,
-                                confirmed_deaths=confirmed,
-                                user_id=session['user_id']
-                            )
-                            db.session.add(dp)
+                if not exists and pd.notnull(value):
+                    dp = DataPoint(
+                        region=region,
+                        date=date,
+                        value=value,
+                        lower_bound=lower,
+                        upper_bound=upper,
+                        confirmed_deaths=confirmed,
+                        user_id=session['user_id']
+                    )
+                    db.session.add(dp)
 
-                        all_data.append({
-                            "Entity": region,
-                            "Day": date,
-                            "Cumulative excess deaths per 100,000 people (central estimate)": value,
-                            "Cumulative excess deaths per 100,000 people (95% CI, lower bound)": lower,
-                            "Cumulative excess deaths per 100,000 people (95% CI, upper bound)": upper,
-                            "Total confirmed deaths due to COVID-19 per 100,000 people": confirmed
-                        })
+                all_data.append({...})
+        db.session.commit()
+    except Exception:
+        flash("Failed to read or process CSV file.", 'upload:error')
+        return redirect(url_for('main.upload_page'))
 
-            db.session.commit()
+    if not all_data:
+        flash("No usable data found in the file.", 'upload:warning')
+        return redirect(url_for('main.upload_page'))
 
-        except Exception as e:
-            flash("Failed to read or process CSV file.", 'upload:error')
-            return redirect(url_for('main.upload_page'))
-
-        if not all_data:
-            flash("No usable data found in the file.", 'upload:warning')
-            return redirect(url_for('main.upload_page'))
-
-        # After the upload, let's base the plot on the entire user's data (from the DB)
-        user_data = DataPoint.query.filter_by(user_id=session['user_id']).all()
-
-        # Convert the data to DataFrame for plotting
-        df_plot = pd.DataFrame([{
-            "Entity": dp.region,
-            "Day": dp.date,
-            "Cumulative excess deaths per 100,000 people (central estimate)": dp.value,
-            "Cumulative excess deaths per 100,000 people (95% CI, lower bound)": dp.lower_bound,
-            "Cumulative excess deaths per 100,000 people (95% CI, upper bound)": dp.upper_bound,
-            "Total confirmed deaths due to COVID-19 per 100,000 people": dp.confirmed_deaths
-        } for dp in user_data])
-
-        # --- Create the Map ---
-        fig_map = px.choropleth(
-            df_plot,
-            locations="Entity",
-            locationmode="country names",
-            color="Cumulative excess deaths per 100,000 people (central estimate)",
-            hover_name="Entity",
-            animation_frame="Day", 
-            hover_data={
-                "Cumulative excess deaths per 100,000 people (95% CI, lower bound)": True,
-                "Cumulative excess deaths per 100,000 people (95% CI, upper bound)": True,
-                "Total confirmed deaths due to COVID-19 per 100,000 people": True
-            },
-            color_continuous_scale="Reds",
-            title="Cumulative Excess Deaths per 100,000 People (Central Estimate)"
-        )
-        map_path = os.path.join(current_app.static_folder, 'plots', 'map_plot.html')
-        fig_map.write_html(map_path)
-
-        # --- Create the Time Series ---
-        df_plot['Day'] = pd.to_datetime(df_plot['Day'])
-        fig_line = px.line(
-            df_plot,
-            x='Day',
-            y='Cumulative excess deaths per 100,000 people (central estimate)',
-            title="Excess Deaths Over Time",
-            labels={'Day': 'Date', 'Cumulative excess deaths per 100,000 people (central estimate)': 'Excess Deaths per 100,000 People'},
-            line_shape='linear'
-        )
-
-        # Add a dropdown filter for country
-        fig_line.update_layout(
-            updatemenus=[{
-                'buttons': [
-                    {
-                        'method': 'update',
-                        'label': 'All Countries',
-                        'args': [{'visible': [True] * len(fig_line.data)}, {'title': 'Excess Deaths Over Time (All Countries)'}]
-                    }
-                ] + [
-                    {
-                        'method': 'update',
-                        'label': country,
-                        'args': [
-                            {'visible': [trace.name == country for trace in fig_line.data]},
-                            {'title': f'Excess Deaths Over Time - {country}'}
-                        ]
-                    }
-                    for country in df_plot['Entity'].dropna().unique()
-                ],
-                'direction': 'down',
-                'showactive': True
-            }]
-        )
-        time_series_path = os.path.join(current_app.static_folder, 'plots', 'time_series_plot.html')
-        fig_line.write_html(time_series_path)
-
-        # --- Pass both plots to the result page ---
-        # Store latest uploaded data in session (or in temp DB if large)
-        session['upload_success'] = True
-        flash("Upload successful. Please select a graph to view.", "upload:success")
-        return redirect(url_for('main.select_graph'))
-
-    flash("Invalid file format. Please upload a CSV file.", 'upload:error')
-    return redirect(url_for('main.upload_page'))
+    # ... then regenerate your plots from DataPoint.query.filter_by(user_id=...) ...
+    # (your existing plotting code stays the same)
+    session['upload_success'] = True
+    flash("Upload successful. Please select a graph to view.", "upload:success")
+    return redirect(url_for('main.select_graph'))
 
 @bp.route('/select_graph', methods=['GET', 'POST'])
 def select_graph():

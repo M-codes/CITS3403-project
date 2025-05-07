@@ -67,7 +67,8 @@ def login_page():
 @auth_bp.route('/signup-page', methods=['GET'])
 def signup_page():
     return render_template('signup.html')  # Ensure signup.html is in the templates/ directory
- # Bot checking route in singup page
+
+# Bot checking route in singup page
 @auth_bp.route('/api/singup', methods=['POST'])
 def api_signup():
     recaptcha_response = request.json.get('recaptcha_token')

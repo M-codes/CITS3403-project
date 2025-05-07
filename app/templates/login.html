@@ -56,7 +56,7 @@
             url: '/login',
             method: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({ email, password, recaptcha }),
+            data: JSON.stringify({ email, password }),
             success: function (res) {
                 alert(res.message);
                 window.location.href = '/home'; // Redirect on success

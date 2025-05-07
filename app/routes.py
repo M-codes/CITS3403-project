@@ -465,10 +465,15 @@ def share_data():
         data_points=data_points
     )
 
-def get_shared_datapoints(user_id):
-    shares = (
+def get_shared_datapoints(user_id, owner_id=None):
+    query = (
         DataShare.query
-        .filter_by(recipient_id=user_id)
+        .filter(DataShare.recipient_id == user_id)
+    )
+    if owner_id:
+        query = query.filter(DataShare.owner_id == owner_id)
+    shares = (
+        query
         .join(DataPoint, DataShare.data_id == DataPoint.id)
         .with_entities(
             DataPoint.id,
@@ -478,7 +483,6 @@ def get_shared_datapoints(user_id):
         )
         .all()
     )
-    # Convert to list of dicts (or DataFrame) for plotting
     return [
         {"id": d.id, "region": d.region, "date": d.date, "value": d.value}
         for d in shares
@@ -492,28 +496,45 @@ def select_shared_graph():
 
     user_id = session['user_id']
 
+    # fetch distinct sharers
+    sharers = (
+        User.query
+        .join(DataShare, User.id == DataShare.owner_id)
+        .filter(DataShare.recipient_id == user_id)
+        .with_entities(User.id, User.email)
+        .distinct()
+        .all()
+    )
+
     if request.method == 'POST':
         graph_type = request.form['graph_type']
         date       = request.form.get('date')
-        # pass a flag so the downstream view knows these are shared points
-        return redirect(url_for('main.shared_map_view', date=date) if graph_type=='map'
-                            else url_for('main.show_shared_'+graph_type, date=date))
+        sharer_id  = request.form.get('sharer_id')
+        # build endpoint with sharer filter
+        endpoint = 'main.shared_map_view' if graph_type=='map' else f"main.show_shared_{graph_type}"
+        return redirect(url_for(endpoint, date=date, sharer_id=sharer_id))
 
     # build a list of distinct dates from shared data
     shared = get_shared_datapoints(user_id)
     dates = sorted({d['date'] for d in shared})
-    return render_template('select_shared_graph.html', available_dates=dates)
+    return render_template(
+        'select_shared_graph.html',
+        available_dates=dates,
+        sharers=sharers
+    )
+
 
 @bp.route('/map')
 def shared_map_view():
     user_id = session['user_id']
     date_str = request.args.get('date')
+    sharer_id = request.args.get('sharer_id', type=int)
 
-    df = pd.DataFrame(get_shared_datapoints(user_id))
+    df = pd.DataFrame(get_shared_datapoints(user_id, owner_id=sharer_id))
     df['date'] = pd.to_datetime(df['date'], errors='coerce')
-    df = df.dropna(subset=['date'])
-    df = df.sort_values(by='date')
+    df = df.dropna(subset=['date']).sort_values(by='date')
 
+    title = f"Shared Data from user #{sharer_id}: Excess Deaths {date_str}"
     fig = px.choropleth(
         df,
         locations="region",
@@ -521,7 +542,7 @@ def shared_map_view():
         color="value",
         hover_name="region",
         animation_frame="date",
-        title=f"Shared Data: Excess Deaths {date_str}",
+        title=title,
         range_color=[df['value'].min(), df['value'].max()]
     )
     path = os.path.join(current_app.static_folder, 'plots', 'shared_map.html')
@@ -531,7 +552,8 @@ def shared_map_view():
 @bp.route('/line')
 def show_shared_line():
     user_id = session['user_id']
-    df = pd.DataFrame(get_shared_datapoints(user_id))
+    sharer_id = request.args.get('sharer_id', type=int)
+    df = pd.DataFrame(get_shared_datapoints(user_id, owner_id=sharer_id))
     df['date'] = pd.to_datetime(df['date'], errors='coerce')
     fig = px.line(df, x='date', y='value', color='region', title='Shared Data: Time Series')
     path = os.path.join(current_app.static_folder, 'plots', 'shared_time_series_plot.html')
@@ -542,8 +564,9 @@ def show_shared_line():
 @bp.route('/bar')
 def show_shared_bar():
     user_id = session['user_id']
+    sharer_id = request.args.get('sharer_id', type=int)
     date_str = request.args.get('date')
-    df = pd.DataFrame(get_shared_datapoints(user_id))
+    df = pd.DataFrame(get_shared_datapoints(user_id, owner_id=sharer_id))
     df['date'] = pd.to_datetime(df['date'], errors='coerce')
     if date_str:
         df = df[df['date'] == pd.to_datetime(date_str)]
@@ -557,8 +580,9 @@ def show_shared_bar():
 @bp.route('/pie')
 def show_shared_pie():
     user_id = session['user_id']
+    sharer_id = request.args.get('sharer_id', type=int)
     date_str = request.args.get('date')
-    df = pd.DataFrame(get_shared_datapoints(user_id))
+    df = pd.DataFrame(get_shared_datapoints(user_id, owner_id=sharer_id))
     df['date'] = pd.to_datetime(df['date'], errors='coerce')
     if date_str:
         df = df[df['date'] == pd.to_datetime(date_str)]

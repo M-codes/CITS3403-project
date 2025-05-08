@@ -2,7 +2,8 @@ from flask import Blueprint, request, jsonify, session, render_template, flash, 
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db  # Import the db object from __init__.py
 from flask import current_app
-from app.models import User 
+import requests
+from app.models import User import requests
 # Create the blueprint
 auth_bp = Blueprint('auth', __name__)
 
@@ -63,6 +64,23 @@ def login_page():
 @auth_bp.route('/signup-page', methods=['GET'])
 def signup_page():
     return render_template('signup.html')  # Ensure signup.html is in the templates/ directory
+
+# Bot checking route in singup page
+@auth_bp.route('/api/singup', methods=['POST'])
+def api_signup():
+    recaptcha_response = request.json.get('recaptcha_token')
+    secret_key = '6LfnCi8rAAAAAMHL8op0mE8gL-gXKyXjoLTuckbX'
+
+    verify_url = 'https://www.google.com/recaptcha/api/siteverify'
+    payload = {
+        'secret': secret_key,
+        'response': recaptcha_response
+    }
+
+    result = requests.post(verify_url, data=payload).json()
+
+    if not result.get('success'):
+        return jsonify({'message': 'reCAPTCHA failed. Try again.'}), 400
 
 # Forgot password page route
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])

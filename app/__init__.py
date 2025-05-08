@@ -16,6 +16,8 @@ def create_app():
     # Configs
     app.config.from_object(Config)  # <--- load config from the class
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+    app.config['RECAPTCHA_SECRET_KEY'] = '6LfnCi8rAAAAAMHL8op0mE8gL-gXKyXjoLTuckbX'
+
     
     CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
     

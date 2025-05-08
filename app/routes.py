@@ -63,6 +63,28 @@ def forum():
     posts = SharedPlot.query.order_by(SharedPlot.id.desc()).all()
     return render_template("forum.html", posts=posts)
 
+@bp.route('/delete_datapoint/<int:data_id>', methods=['POST'])
+def delete_datapoint(data_id):
+    if 'user_id' not in session:
+        flash("You must be logged in to delete data.", "error")
+        return redirect(url_for('auth.login'))
+
+    user_id = session['user_id']
+
+    dp = DataPoint.query.filter_by(id=data_id, user_id=user_id).first()
+    if not dp:
+        flash("Data not found or unauthorized.", "warning")
+        return redirect(url_for('main.manage_data'))
+
+    # First delete related shares (if any)
+    DataShare.query.filter_by(data_id=data_id).delete()
+
+    # Now delete the data point
+    db.session.delete(dp)
+    db.session.commit()
+
+    flash("Data point and all related shares deleted.", "success")
+    return redirect(url_for('main.manage_data'))
 
 @bp.route('/manual_entry', methods=['GET', 'POST'])
 def manual_entry():

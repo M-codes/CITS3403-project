@@ -50,6 +50,7 @@ def login():
 def logout():
     session.pop('user_id', None)
     return jsonify({'message': 'Logged out successfully.'})
+    return redirect(url_for('auth.login_page'))
 
 # Check login status
 @auth_bp.route('/check-session')

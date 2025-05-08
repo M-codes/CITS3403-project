@@ -2,8 +2,11 @@ from flask import Blueprint, request, jsonify, session, render_template, flash, 
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db  # Import the db object from __init__.py
 from flask import current_app
+<<<<<<< HEAD
+from app.models import User 
+=======
 import requests
-from app.models import User import requests
+>>>>>>> origin/main
 # Create the blueprint
 auth_bp = Blueprint('auth', __name__)
 

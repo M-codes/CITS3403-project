@@ -3,6 +3,7 @@
 
 {% block content %}
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
 
 <div class="max-w-6xl mx-auto space-y-12 py-8">
 
@@ -11,26 +12,26 @@
     <h2 class="text-2xl font-semibold mb-4">My Data Points</h2>
     {% if my_data %}
       <div class="overflow-x-auto">
-        <table id="ownTable" class="min-w-full divide-y divide-gray-200">
+        <table id="ownTable" class="display nowrap min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Country</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Excess Deaths</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Lower Bound</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Upper Bound</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Confirmed Deaths</th>
+              <th>Country</th>
+              <th>Date</th>
+              <th>Excess Deaths</th>
+              <th>Lower Bound</th>
+              <th>Upper Bound</th>
+              <th>Confirmed Deaths</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody>
             {% for d in my_data %}
-              <tr class="hover:bg-gray-50">
-                <td class="px-4 py-3 text-gray-700">{{ d.region }}</td>
-                <td class="px-4 py-3 text-gray-700">{{ d.date }}</td>
-                <td class="px-4 py-3 text-gray-700">{{ d.value }}</td>
-                <td class="px-4 py-3 text-gray-700">{{ d.lower_bound or "N/A" }}</td>
-                <td class="px-4 py-3 text-gray-700">{{ d.upper_bound or "N/A" }}</td>
-                <td class="px-4 py-3 text-gray-700">{{ d.confirmed_deaths or "N/A" }}</td>
+              <tr>
+                <td>{{ d.region }}</td>
+                <td>{{ d.date }}</td>
+                <td>{{ d.value }}</td>
+                <td>{{ d.lower_bound or "N/A" }}</td>
+                <td>{{ d.upper_bound or "N/A" }}</td>
+                <td>{{ d.confirmed_deaths or "N/A" }}</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -48,29 +49,29 @@
     <h2 class="text-2xl font-semibold mb-4">Data Shared With Me</h2>
     {% if shared_shares %}
       <div class="overflow-x-auto">
-        <table id="sharedTable" class="min-w-full divide-y divide-gray-200">
+        <table id="sharedTable" class="display nowrap min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Country</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Excess Deaths</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Lower Bound</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Upper Bound</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Confirmed Deaths</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Shared By</th>
+              <th>Country</th>
+              <th>Date</th>
+              <th>Excess Deaths</th>
+              <th>Lower Bound</th>
+              <th>Upper Bound</th>
+              <th>Confirmed Deaths</th>
+              <th>Shared By</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody>
             {% for share in shared_shares %}
               {% set d = share.data_point %}
-              <tr class="hover:bg-gray-50">
-                <td class="px-4 py-3 text-gray-700">{{ d.region }}</td>
-                <td class="px-4 py-3 text-gray-700">{{ d.date }}</td>
-                <td class="px-4 py-3 text-gray-700">{{ d.value }}</td>
-                <td class="px-4 py-3 text-gray-700">{{ d.lower_bound or "N/A" }}</td>
-                <td class="px-4 py-3 text-gray-700">{{ d.upper_bound or "N/A" }}</td>
-                <td class="px-4 py-3 text-gray-700">{{ d.confirmed_deaths or "N/A" }}</td>
-                <td class="px-4 py-3 text-gray-700">{{ share.owner.email }}</td>
+              <tr>
+                <td>{{ d.region }}</td>
+                <td>{{ d.date }}</td>
+                <td>{{ d.value }}</td>
+                <td>{{ d.lower_bound or "N/A" }}</td>
+                <td>{{ d.upper_bound or "N/A" }}</td>
+                <td>{{ d.confirmed_deaths or "N/A" }}</td>
+                <td>{{ share.owner.email }}</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -90,23 +91,33 @@
   </div>
 </div>
 
+<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 <script>
-  $(function() {
-    $('#ownTable').DataTable({
-      order: [[1, 'desc']],
+  $(function () {
+    $('#ownTable, #sharedTable').DataTable({
       responsive: true,
-      paging: false,
-      info: false,
-      searching: false
-    });
-    $('#sharedTable').DataTable({
       order: [[1, 'desc']],
-      responsive: true,
-      paging: false,
-      info: false,
-      searching: false
+      paging: true,
+      info: true,
+      searching: true,
+      initComplete: function () {
+        this.api().columns([0, 1]).every(function () {
+          var column = this;
+          var select = $('<select class="text-xs border rounded ml-1"><option value="">Filter</option></select>')
+            .appendTo($(column.header()))
+            .on('change', function () {
+              var val = $.fn.dataTable.util.escapeRegex($(this).val());
+              column.search(val ? '^' + val + '$' : '', true, false).draw();
+            });
+
+          column.data().unique().sort().each(function (d) {
+            select.append('<option value="' + d + '">' + d + '</option>')
+          });
+        });
+      }
     });
   });
 </script>

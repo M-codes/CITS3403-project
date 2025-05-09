@@ -57,7 +57,7 @@
             <a href="{{ url_for('main.data_table') }}">📊 View Data Table</a>
         </div>
         <div class="card">
-            <a href="{{ url_for('main.map_view') }}">🗺️ View Animated Map</a>
+            <a href="{{ url_for('main.select_graph') }}">🗺️ View Plots</a>
         </div>
         <div class="card">
             <a href="{{ url_for('main.forum') }}">💬 Forum</a>
@@ -67,6 +67,15 @@
         </div>
         <div class="card">
             <a href="#">📧 Email</a>
+        </div>
+        <div class="card">
+            <a href="{{ url_for('main.share_data') }}">🔗 Share Data</a>
+        </div>
+        <div class="card">
+            <a href="{{ url_for('main.select_shared_graph') }}">📈 View Shared Data</a>
+        </div>
+        <div class="card">
+            <a href="{{ url_for('auth.logout') }}">🚪 Log Out</a>
         </div>
     </div>
 </body>

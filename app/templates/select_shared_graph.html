@@ -1,0 +1,91 @@
+{% extends "layout.html" %}
+{% block title %}Shared Data Graphs{% endblock %}
+{% block content %}
+<div class="max-w-xl mx-auto bg-white shadow-md rounded-xl p-6 mt-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">View Graphs from Shared Data</h1>
+
+    <form method="POST" class="space-y-5" id="graphForm">
+        <!-- Sharer -->
+        <div>
+            <label for="sharer_id" class="block text-sm font-semibold text-gray-700 mb-1">Shared By</label>
+            <select name="sharer_id" id="sharer_id" required
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="" disabled selected>Select a user</option>
+                {% for id, email in sharers %}
+                    <option value="{{ id }}">{{ email }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Graph Type -->
+        <div>
+            <label for="graph_type" class="block text-sm font-semibold text-gray-700 mb-1">Graph Type</label>
+            <select name="graph_type" id="graph_type" required
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="" disabled selected>Select a graph</option>
+                <option value="map">Animated Map</option>
+                <option value="line">Line Chart</option>
+                <option value="bar">Bar Chart</option>
+                <option value="pie">Pie Chart</option>
+            </select>
+        </div>
+
+        <!-- Date Selector (Only for bar/pie) -->
+        <div id="date_wrapper" class="hidden transition-opacity duration-300">
+            <label for="date" class="block text-sm font-semibold text-gray-700 mb-1">Select Date (for bar/pie)</label>
+            <select name="date" id="date"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% for date in available_dates %}
+                    <option value="{{ date }}">{{ date }}</option>
+                {% endfor %}
+            </select>
+            <p class="text-sm text-gray-500 mt-1">Only relevant for bar and pie charts.</p>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" id="submitBtn"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+            Generate Graph
+        </button>
+    </form>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const graphType = document.getElementById("graph_type");
+    const dateWrapper = document.getElementById("date_wrapper");
+    const submitBtn = document.getElementById("submitBtn");
+    const form = document.getElementById("graphForm");
+
+    function toggleDateField() {
+      const selected = graphType.value;
+      if (selected === "bar" || selected === "pie") {
+        dateWrapper.classList.remove("hidden");
+      } else {
+        dateWrapper.classList.add("hidden");
+      }
+    }
+
+    function validateForm() {
+      const sharerSelected = document.getElementById("sharer_id").value !== "";
+      const graphSelected = graphType.value !== "";
+      const dateSelected = (graphType.value === "bar" || graphType.value === "pie")
+        ? document.getElementById("date").value !== ""
+        : true;
+
+      submitBtn.disabled = !(sharerSelected && graphSelected && dateSelected);
+    }
+
+    graphType.addEventListener("change", () => {
+      toggleDateField();
+      validateForm();
+    });
+
+    document.getElementById("sharer_id").addEventListener("change", validateForm);
+    document.getElementById("date").addEventListener("change", validateForm);
+
+    // Initial validation
+    validateForm();
+  });
+</script>
+{% endblock %}

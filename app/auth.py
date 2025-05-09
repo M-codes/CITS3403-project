@@ -2,15 +2,12 @@ from flask import Blueprint, request, jsonify, session, render_template, flash, 
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db  # Import the db object from __init__.py
 from flask import current_app
+from app.models import User 
 import requests
 # Create the blueprint
 auth_bp = Blueprint('auth', __name__)
 
-# User model
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
+
 
 # Create database tables
 @auth_bp.before_app_request
@@ -53,6 +50,7 @@ def login():
 def logout():
     session.pop('user_id', None)
     return jsonify({'message': 'Logged out successfully.'})
+    return redirect(url_for('auth.login_page'))
 
 # Check login status
 @auth_bp.route('/check-session')

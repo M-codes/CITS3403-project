@@ -1,8 +1,15 @@
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
-from app.auth import User  # or wherever User is defined
+ # or wherever User is defined
 from app import db
+from datetime import datetime
+
+# User model
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
 
 class DataPoint(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -25,3 +32,14 @@ class SharedPlot(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Associated user
 
     user = db.relationship('User', backref='shared_plots', lazy=True)
+
+class DataShare(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    data_id = db.Column(db.Integer, db.ForeignKey('data_point.id'), nullable=False)
+    shared_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    owner = db.relationship('User', foreign_keys=[owner_id], backref='shared_out')
+    recipient = db.relationship('User', foreign_keys=[recipient_id], backref='shared_in')
+    data_point = db.relationship('DataPoint', backref='shares')

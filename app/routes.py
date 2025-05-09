@@ -211,7 +211,7 @@ def upload():
     # (your existing plotting code stays the same)
     session['upload_success'] = True
     flash("Upload successful. Please select a graph to view.", "upload:success")
-    return redirect(url_for('main.select_graph'))
+    return redirect(url_for('main.upload_page'))
 
 @bp.route('/select_graph', methods=['GET', 'POST'])
 def select_graph():

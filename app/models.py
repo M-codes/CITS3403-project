@@ -19,6 +19,7 @@ class DataPoint(db.Model):
     lower_bound = db.Column(db.Float)
     upper_bound = db.Column(db.Float)
     confirmed_deaths = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     # NEW: Add foreign key to User
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
@@ -30,7 +31,7 @@ class SharedPlot(db.Model):
     comment = db.Column(db.Text, nullable=True)  # Optional comment
     email = db.Column(db.String(120), nullable=False)  # Email of the user sharing the plot
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Associated user
-
+    title = db.Column(db.String(100), nullable=True)
     user = db.relationship('User', backref='shared_plots', lazy=True)
 
 class DataShare(db.Model):

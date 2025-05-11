@@ -35,7 +35,8 @@
             <td class="px-2 py-1">
                 <!-- Safe DELETE route: Deletes DataPoint + all its DataShares -->
                 <form method="POST" action="{{ url_for('main.delete_datapoint', data_id=dp.id) }}" class="inline" 
-                      onsubmit="return confirm('Are you sure you want to delete this data point and any shares?');">
+                    onsubmit="return confirm('Are you sure you want to delete this data point and any shares?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-xs">Delete</button>
                 </form>
             </td>

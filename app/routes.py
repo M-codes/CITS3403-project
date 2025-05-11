@@ -165,6 +165,23 @@ def upload():
 
     all_data = []
     try:
+        # Read the first chunk to validate the structure
+        first_chunk = pd.read_csv(filepath, nrows=1)
+        required_columns = {"Entity", "Day"}
+        if not required_columns.issubset(first_chunk.columns):
+            flash("CSV must contain 'Entity' and 'Day' columns.", 'upload:error')
+            return redirect(url_for('main.upload_page'))
+
+        # Identify the dynamic data column (must be exactly one additional column)
+        data_columns = [col for col in first_chunk.columns if col not in required_columns]
+        if len(data_columns) != 1:
+            flash("CSV must contain exactly one additional data column.", 'upload:error')
+            return redirect(url_for('main.upload_page'))
+
+        data_column = data_columns[0]  # The dynamic column name
+        session['data_column'] = data_column  # Store it in the session for later use
+
+        # Process the file in chunks
         for chunk in pd.read_csv(filepath, chunksize=1000):
             for _, row in chunk.iterrows():
                 # parse region, date, values...
@@ -173,12 +190,9 @@ def upload():
                 if pd.isna(date):
                     continue
 
-                value = row["Cumulative excess deaths per 100,000 people (central estimate)"]
-                lower = row["Cumulative excess deaths per 100,000 people (95% CI, lower bound)"]
-                upper = row["Cumulative excess deaths per 100,000 people (95% CI, upper bound)"]
-                confirmed = row["Total confirmed deaths due to COVID-19 per 100,000 people"]
+                value = row[data_column]
 
-                # — include user_id when checking for duplicates! —
+                # Check for duplicates
                 exists = DataPoint.query.filter_by(
                     region=region,
                     date=date,
@@ -190,27 +204,25 @@ def upload():
                         region=region,
                         date=date,
                         value=value,
-                        lower_bound=lower,
-                        upper_bound=upper,
-                        confirmed_deaths=confirmed,
                         user_id=session['user_id']
                     )
                     db.session.add(dp)
 
-                all_data.append({...})
+                all_data.append({
+                    "region": region,
+                    "date": date,
+                    "value": value
+                })
         db.session.commit()
-    except Exception:
-        flash("Failed to read or process CSV file.", 'upload:error')
+    except Exception as e:
+        flash(f"Failed to read or process CSV file: {str(e)}", 'upload:error')
         return redirect(url_for('main.upload_page'))
 
     if not all_data:
         flash("No usable data found in the file.", 'upload:warning')
         return redirect(url_for('main.upload_page'))
 
-    # ... then regenerate your plots from DataPoint.query.filter_by(user_id=...) ...
-    # (your existing plotting code stays the same)
-    session['upload_success'] = True
-    flash("Upload successful. Please select a graph to view.", "upload:success")
+    flash(f"Upload successful. Data column '{data_column}' detected. Please select a graph to view.", "upload:success")
     return redirect(url_for('main.upload_page'))
 
 @bp.route('/select_graph', methods=['GET', 'POST'])

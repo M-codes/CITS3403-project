@@ -307,8 +307,6 @@ def map_view():
         flash("Invalid date format.", 'error')
         return redirect(url_for('main.index'))
 
-    
-
     data = DataPoint.query.filter_by(user_id=session['user_id']).all()
 
     if not data:
@@ -330,6 +328,10 @@ def map_view():
     # Sort the DataFrame by date to ensure proper animation order
     df = df.sort_values(by='date')
 
+    # Dynamic title based on the uploaded data column
+    data_column = session.get('data_column', 'Data')
+    title = f"{data_column} on {selected_date.strftime('%Y-%m-%d')}"
+
     # Create the choropleth with animation (date slider)
     fig = px.choropleth(
         df,
@@ -339,13 +341,13 @@ def map_view():
         hover_name="region",
         animation_frame="date",  # Date slider will be generated
         color_continuous_scale="Reds",
-        title=f"Excess Deaths on {selected_date.strftime('%Y-%m-%d')}",  # Use the formatted date
-        range_color=[df['value'].min(), df['value'].max()]  # Ensures consistent color scale across all frames
+        title=title,
+        range_color=[df['value'].min(), df['value'].max()] #Ensures consistant colour scale across all frmaes
     )
 
     # Save the plot as an HTML file
     map_path = os.path.join(current_app.static_folder, 'plots/map_plot.html')
-    if os.path.exists(map_path):
+    if (os.path.exists(map_path)):
         os.remove(map_path)
     fig.write_html(map_path)
 
@@ -373,7 +375,11 @@ def show_bar_graph():
 
     df = df.groupby('region').mean(numeric_only=True).reset_index()
 
-    fig = px.bar(df, x='region', y='value', title=f"Average Excess Deaths by Region ({selected_date})")
+    # Dynamic title based on the uploaded data column
+    data_column = session.get('data_column', 'Data')
+    title = f"{data_column} by Region ({selected_date})"
+
+    fig = px.bar(df, x='region', y='value', title=title)
     path = os.path.join(current_app.static_folder, 'plots/bar_chart.html')
     fig.write_html(path)
     
@@ -399,11 +405,15 @@ def show_pie_chart():
     df = df.groupby('region', as_index=False).sum(numeric_only=True)
     df_top10 = df.sort_values(by='value', ascending=False).head(10)
 
+    # Dynamic title based on the uploaded data column
+    data_column = session.get('data_column', 'Data')
+    title = f"Top 10 Regions for {data_column} ({selected_date})"
+
     fig = px.pie(
         df_top10,
         values='value',
         names='region',
-        title=f'Top 10 Regions by Total Excess Deaths ({selected_date})'
+        title=title
     )
 
     path = os.path.join(current_app.static_folder, 'plots/pie_chart.html')

@@ -4,85 +4,84 @@
     <meta charset="UTF-8">
     <title>Sign Up</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    
-    <!-- CSRF token for AJAX -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="min-h-screen flex">
-
-    <!-- Left side: Description -->
-    <div class="w-1/2 bg-purple-800 text-white flex flex-col justify-center items-center p-10">
+    <!-- Left Side: Info Panel -->
+    <div class="w-1/2 bg-purple-800 text-white flex flex-col justify-center items-center p-10 text-purple-100">
         <h1 class="text-4xl font-bold mb-4">Welcome to CITS3403 Group 43</h1>
-        <h2 class="text-2xl font-bold mb-4">Infectious Disease Worldwide</h2>
-        <p class="text-lg max-w-md text-center mb-2">
-            Our website tracks the global infection of COVID-19.
-        </p>
-        <p class="text-lg max-w-md text-center mb-2">
-            Join us for real-time data and alerts.
+        <h2 class="text-2xl font-bold mb-4">Infectioning Disease Worldwide</h2>
+        <p class="text-lg max-w-md text-center">
+            Our website aims to track the infection of Covid-19 globally.
         </p>
         <p class="text-lg max-w-md text-center">
-            Create an account to stay updated.
+            Join us to access real-time disease data and alerts.
         </p>
     </div>
 
-    <!-- Right side: Signup Form -->
-    <div class="w-1/2 flex items-center justify-center bg-gray-100 p-8">
+    <!-- Right Side: Signup Form -->
+    <div class="w-1/2 flex items-center justify-center p-8 bg-gray-100">
         <div class="w-full max-w-md bg-white p-8 rounded shadow-md">
-            <div class="g-recaptcha mb-4" data-sitekey="6LfnCi8rAAAAAMrlqvYzt9B1jAMEwHIr5FWQPA03"></div>
-            
             <h2 class="text-2xl font-bold mb-6 text-center">Sign Up</h2>
 
+            <!-- reCAPTCHA at top -->
+            <div class="g-recaptcha mb-4" data-sitekey="6LfnCi8rAAAAAMrlqvYzt9B1jAMEwHIr5FWQPA03"></div>
+
             <form id="signupForm">
+                <input type="hidden" id="csrf_token" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="email" id="email" placeholder="Email" class="w-full border p-2 mb-4 rounded" required>
                 <input type="password" id="password" placeholder="Password" class="w-full border p-2 mb-4 rounded" required>
                 <button type="submit" class="w-full bg-purple-300 text-black py-2 rounded">Sign Up</button>
             </form>
 
-            <p class="mt-4 text-sm text-center">
-                Already have an account? 
+            <p class="mt-4 text-sm text-center">Already have an account? 
                 <a href="/login-page" class="text-purple-600 hover:underline">Log in</a>
             </p>
         </div>
     </div>
 
     <script>
-        $('#signupForm').on('submit', function (e) {
-            e.preventDefault();
+        $(document).ready(function () {
+            $('#signupForm').on('submit', function (e) {
+                e.preventDefault();
 
-            const email = $('#email').val();
-            const password = $('#password').val();
-            const recaptcha = grecaptcha.getResponse();
-            const csrfToken = $('meta[name="csrf-token"]').attr('content');
+                const email = $('#email').val();
+                const password = $('#password').val();
+                const recaptcha = grecaptcha.getResponse();
+                const csrfToken = $('#csrf_token').val();
 
-            if (!recaptcha) {
-                alert('Please verify you are not a robot.');
-                return;
-            }
+                if (!recaptcha) {
+                    alert('Please verify you are not a robot.');
+                    return;
+                }
 
-            $.ajax({
-                url: '/register',
-                method: 'POST',
-                contentType: 'application/json',
-                headers: {
-                    'X-CSRFToken': csrfToken
-                },
-                data: JSON.stringify({ email, password, recaptcha_token: recaptcha }),
-                success: function (res) {
-                    alert(res.message);
-                    window.location.href = '/home';
-                },
-                error: function (xhr) {
-                    alert(xhr.responseJSON?.message || 'Signup failed');
+                $.ajax({
+                    url: '/register',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
+                    data: JSON.stringify({ email, password }),
+                    success: function (res) {
+                        alert(res.message);
+                        window.location.href = '/home';
+                    },
+                    error: function (xhr) {
+                        alert(xhr.responseJSON?.message || 'Signup failed');
+                    }
+                });
+            });
+
+            // Trigger Enter key
+            $('#signupForm input').on('keypress', function (e) {
+                if (e.which === 13) {
+                    $('#signupForm').submit();
                 }
             });
         });
     </script>
-
 </body>
 </html>

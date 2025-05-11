@@ -26,6 +26,7 @@
 {% endwith %}
 
 <form method="POST" class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md space-y-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div>
         <label for="region" class="block text-gray-700 font-semibold mb-2">Region (Country Name)</label>
         <select name="region" id="region" class="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>

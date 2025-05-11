@@ -43,6 +43,7 @@
         <div class="w-full max-w-5xl bg-white border rounded-lg p-6 shadow-md">
             <h2 class="text-center text-xl font-semibold">Upload a Post</h2>
             <form action="{{ url_for('main.upload_post') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div>
                     <label for="plot_image" class="block text-gray-700 font-semibold mb-2">Upload Plot (PNG)</label>
                     <input type="file" name="plot_image" accept=".png" required class="w-full border p-2 rounded">

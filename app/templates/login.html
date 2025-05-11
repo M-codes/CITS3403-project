@@ -10,14 +10,9 @@
 <body class="min-h-screen flex">
     <!-- Left Side: Info Panel -->
     <div class="w-1/2 bg-purple-800 text-white flex flex-col justify-center items-center p-10 text-purple-100">
-        <h1 class="text-4xl font-bold mb-4">Welcome to CITS3403 Group 43</h1>
-        <h2 class="text-2xl font-bold mb-4">Infectioning Disease Worldwide</h2>
-        <p class="text-lg max-w-md text-center">
-            Our website aims to track the infection of Covid-19 globally.
-        </p>
-        <p class="text-lg max-w-md text-center">
-            Get real-time disease data and alerts by logging in.
-        </p>
+        <h1 class="text-4xl font-bold mb-4">Welcome to CITS3403 Group 43 Project</h1>
+        <h2 class="text-2xl font-bold mb-4">Infectious Disease Worldwide</h2>
+        <p class="text-lg max-w-md text-center">Get real-time alerts and insights on global infections.</p>
     </div>
 
     <!-- Right Side: Login Form -->
@@ -25,7 +20,6 @@
         <div class="w-full max-w-md bg-white p-8 rounded shadow-md">
             <h2 class="text-2xl font-bold mb-6 text-center">Log In</h2>
 
-            <!-- Flash message display -->
             {% with messages = get_flashed_messages(with_categories=true) %}
               {% if messages %}
                 <ul class="mb-4">
@@ -48,54 +42,49 @@
 
             <p class="mt-2 text-sm text-center">
                 <a href="/forgot-password" class="text-indigo-600 hover:underline">Forgot your password?</a>
-            </p>            
+            </p>
             <p class="mt-4 text-sm text-center">Don't have an account? 
                 <a href="/signup-page" class="text-indigo-600 hover:underline">Sign up</a>
             </p>
         </div>
     </div>
 
-    <script>
-        $(document).ready(function () {
-            $('#loginForm').on('submit', function (e) {
-                e.preventDefault();
+<script>
+    // Submit login on Enter
+    document.getElementById("loginForm").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            document.querySelector("#loginForm button[type='submit']").click();
+        }
+    });
 
-                const email = $('#email').val();
-                const password = $('#password').val();
-                const csrfToken = $('#csrf_token').val();
+    $('#loginForm').on('submit', function (e) {
+        e.preventDefault();
+        const email = $('#email').val();
+        const password = $('#password').val();
+        const csrfToken = $('#csrf_token').val();
 
-                $.ajax({
-                    url: '/login',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    headers: {
-                        'X-CSRFToken': csrfToken
-                    },
-                    data: JSON.stringify({ email, password }),
-                    success: function (res) {
-                        alert(res.message);
-                        window.location.href = '/home';
-                    },
-                    error: function (xhr) {
-                        alert(xhr.responseJSON?.message || 'Login failed');
-                    }
-                });
-            });
-
-            // Trigger Enter key for form
-            $('#loginForm input').on('keypress', function (e) {
-                if (e.which === 13) {
-                    $('#loginForm').submit();
-                }
-            });
-
-            // Flash message auto-dismiss after 5s
-            window.onload = () => {
-                setTimeout(() => {
-                    document.querySelectorAll('[id^="flash-message-"]').forEach(el => el.remove());
-                }, 5000);
-            };
+        $.ajax({
+            url: '/login',
+            method: 'POST',
+            contentType: 'application/json',
+            headers: { 'X-CSRFToken': csrfToken },
+            data: JSON.stringify({ email, password }),
+            success: function (res) {
+                alert(res.message);
+                window.location.href = '/home';
+            },
+            error: function (xhr) {
+                alert(xhr.responseJSON?.message || 'Login failed');
+            }
         });
-    </script>
+    });
+
+    window.onload = () => {
+        setTimeout(() => {
+            document.querySelectorAll('[id^="flash-message-"]').forEach(el => el.remove());
+        }, 5000);
+    };
+</script>
 </body>
 </html>

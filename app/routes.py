@@ -15,11 +15,14 @@ bp = Blueprint('main', __name__)
 def index():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
+    
+    user_id = session['user_id']
+    user = User.query.get(user_id)  # Fetch the user object
 
     has_data = DataPoint.query.filter_by(user_id=session['user_id']).first() is not None
     has_shared = DataShare.query.filter(DataShare.recipient_id == session['user_id']).first() is not None
 
-    return render_template('index.html', has_data=has_data, has_shared=has_shared)
+    return render_template('index.html', has_data=has_data, has_shared=has_shared,user_email=user.email if user else "Unknown")
 
 
 @bp.route('/data_table')

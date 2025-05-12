@@ -290,7 +290,29 @@ def manage_data():
         return redirect(url_for('main.manage_data'))
 
     # GET: Show all user's data
-    data = DataPoint.query.filter_by(user_id=user_id).all()
+    query = DataPoint.query.filter_by(user_id=user_id)
+
+    region = request.args.get('region', '').strip()
+    filter_date = request.args.get('date')
+    min_value = request.args.get('min_value')
+
+    if region:
+        query = query.filter(DataPoint.region.ilike(f"%{region}%"))
+
+    if filter_date:
+        try:
+            query = query.filter(DataPoint.date == datetime.strptime(filter_date, "%Y-%m-%d").date())
+        except ValueError:
+            flash("Invalid date format", "warning")
+
+    if min_value:
+        try:
+            query = query.filter(DataPoint.value >= float(min_value))
+        except ValueError:
+            flash("Invalid minimum value", "warning")
+
+    data = query.order_by(DataPoint.date.desc()).all()
+
     return render_template('manage_data.html', data=data)
 
 

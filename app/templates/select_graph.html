@@ -4,6 +4,7 @@
 <h2 class="text-2xl font-bold mb-6 text-center">Choose a Graph Type</h2>
 
 <form method="POST" id="graphForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="graph_type" id="graph_type_input">
   <input type="hidden" name="date" id="date_input">
 

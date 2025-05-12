@@ -5,6 +5,7 @@
     <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">View Graphs from Shared Data</h1>
 
     <form method="POST" class="space-y-5" id="graphForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <!-- Sharer -->
         <div>
             <label for="sharer_id" class="block text-sm font-semibold text-gray-700 mb-1">Shared By</label>

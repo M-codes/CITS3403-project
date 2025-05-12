@@ -1,75 +1,63 @@
+<!-- signup.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Sign Up</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <meta charset="UTF-8">
+  <title>Sign Up</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="min-h-screen flex">
-    <!-- Left Side: Info Panel -->
-    <div class="w-1/2 bg-purple-800 text-white flex flex-col justify-center items-center p-10 text-purple-100">
-        <h1 class="text-4xl font-bold mb-4">Welcome to CITS3403 Group 43</h1>
-        <h2 class="text-2xl font-bold mb-4">Infectioning Disease Worldwide</h2>
-        <p class="text-lg max-w-md text-center">
-            Our website aims to target the infection of Covid-19 over the world.
-        </p>
-        <p class="text-lg max-w-md text-center">
-            Join us to get real-time data and alerts on infectious diseases.
-        </p>
-        <p class="text-lg max-w-md text-center">
-            Create your account to get real-time disease data and alerts.
-        </p>
-    </div>
+  <div class="w-1/2 bg-purple-800 text-white flex flex-col justify-center items-center p-10 text-purple-100">
+    <h1 class="text-4xl font-bold mb-4">Welcome to CITS3403 Group 43</h1>
+    <p class="text-lg text-center max-w-md">Create your account to get real-time disease data and alerts.</p>
+  </div>
 
-    <!-- Right Side: Signup Form -->
-<div class="w-1/2 flex items-center justify-center p-8 bg-gray-100">
+  <div class="w-1/2 flex items-center justify-center p-8 bg-gray-100">
     <div class="w-full max-w-md bg-white p-8 rounded shadow-md">
-        <div class="g-recaptcha mb-4" data-sitekey="6LfnCi8rAAAAAMrlqvYzt9B1jAMEwHIr5FWQPA03"></div>
-        <h2 class="text-2xl font-bold mb-6 text-center">Sign Up</h2>
+      <div class="g-recaptcha mb-4" data-sitekey="6LfnCi8rAAAAAMrlqvYzt9B1jAMEwHIr5FWQPA03"></div>
+      <h2 class="text-2xl font-bold mb-6 text-center">Sign Up</h2>
 
-        <!-- Form wrapper added -->
-        <form id="signupForm">
-            <input type="email" id="email" placeholder="Email" class="w-full border p-2 mb-4 rounded" required>
-            <input type="password" id="password" placeholder="Password" class="w-full border p-2 mb-4 rounded" required>
-            <button type="submit" class="w-full bg-purple-300 text-black py-2 rounded">Sign Up</button>
-        </form>
+      <form id="signupForm" method="POST">
+        <input type="email" id="email" name="email" placeholder="Email" class="w-full border p-2 mb-4 rounded" required>
+        <input type="password" id="password" name="password" placeholder="Password" class="w-full border p-2 mb-4 rounded" required>
+        <button type="submit" class="w-full bg-purple-300 text-black py-2 rounded">Sign Up</button>
+      </form>
 
-        <p class="mt-4 text-sm text-center">Already have an account? 
-            <a href="/login-page" class="text-purple-600 hover:underline">Log in</a>
-        </p>
+      <p class="mt-4 text-sm text-center">Already have an account?
+        <a href="/login-page" class="text-purple-600 hover:underline">Log in</a>
+      </p>
     </div>
-</div>
+  </div>
 
-<script>
-    $('#signupForm').on('submit', function (e) {
-        e.preventDefault(); // Prevent default form behavior
+  <script>
+    document.getElementById('signupForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const recaptcha = grecaptcha.getResponse();
 
-        const email = $('#email').val();
-        const password = $('#password').val();
-        const recaptcha = grecaptcha.getResponse();
-        if (!recaptcha) {
-            alert('Please verify you are not a robot.');
-            return;
+      if (!recaptcha) {
+        alert('Please verify you are not a robot.');
+        return;
+      }
+
+      $.ajax({
+        url: '/register',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ email, password }),
+        success: function (res) {
+          alert(res.message);
+          window.location.href = '/login-page';
+        },
+        error: function (xhr) {
+          alert(xhr.responseJSON.message || 'Signup failed');
         }
-
-        $.ajax({
-            url: '/register',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ email, password }),
-            success: function (res) {
-                alert(res.message);
-                window.location.href = '/home'; // Redirect on success
-            },
-            error: function (xhr) {
-                alert(xhr.responseJSON.message || 'Signup failed');
-            }
-        });
+      });
     });
-</script>
-
+  </script>
 </body>
 </html>

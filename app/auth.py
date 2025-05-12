@@ -3,6 +3,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from . import db  # Import the db object from __init__.py
 from flask import current_app
 from app.models import User 
+from flask_wtf.csrf import CSRFProtect
+from app import csrf
+from app.form import RegisterForm
 import requests
 # Create the blueprint
 auth_bp = Blueprint('auth', __name__)
@@ -14,6 +17,7 @@ auth_bp = Blueprint('auth', __name__)
 
 # Register endpoint
 @auth_bp.route('/register', methods=['POST'])
+@csrf.exempt
 def register():
     data = request.get_json()
     email = data['email']
@@ -31,6 +35,7 @@ def register():
 
 # Login endpoint
 @auth_bp.route('/login', methods=['POST'])
+@csrf.exempt
 def login():
     data = request.get_json()
     email = data['email']
@@ -46,7 +51,7 @@ def login():
 @auth_bp.route('/logout', methods=['GET'])
 def logout():
     session.pop('user_id', None)
-    return jsonify({'message': 'Logged out successfully.'})
+    flash('Logged out successfully.', 'info')  # Only flash on logout
     return redirect(url_for('auth.login_page'))
 
 # Check login status
@@ -58,13 +63,15 @@ def check_session():
 @auth_bp.route('/login-page', methods=['GET'])
 def login_page():
     return render_template('login.html')  # Ensure login.html is in the templates/ directory
-# Signup page route
+
+ # Signup page route
 @auth_bp.route('/signup-page', methods=['GET'])
 def signup_page():
+    form = RegisterForm()
     return render_template('signup.html')  # Ensure signup.html is in the templates/ directory
 
-# Bot checking route in singup page
-@auth_bp.route('/api/singup', methods=['POST'])
+# Bot checking route in signup page
+@auth_bp.route('/api/signup', methods=['POST'])
 def api_signup():
     recaptcha_response = request.json.get('recaptcha_token')
     secret_key = '6LfnCi8rAAAAAMHL8op0mE8gL-gXKyXjoLTuckbX'

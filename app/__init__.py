@@ -4,15 +4,22 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 from app.config import Config  # <--- import your config class
 import os
+from flask_wtf.csrf import CSRFProtect
+
 import warnings
+
 
 warnings.filterwarnings("ignore", message=".*longdouble.*")
 
 db = SQLAlchemy()
+csrf = CSRFProtect()
 migrate = Migrate()
+
 def create_app():
     app = Flask(__name__)
     app.secret_key = '960610Moon'
+    
+    csrf.init_app(app)
     
     # Configs
     app.config.from_object(Config)  # <--- load config from the class

@@ -223,7 +223,7 @@ def upload():
         return redirect(url_for('main.upload_page'))
 
     flash(f"Upload successful. Data column '{data_column}' detected. Please select a graph to view.", "upload:success")
-    return redirect(url_for('main.upload_page'))
+    return redirect(url_for('main.select_graph'))
 
 @bp.route('/select_graph', methods=['GET', 'POST'])
 def select_graph():

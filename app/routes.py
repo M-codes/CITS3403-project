@@ -468,12 +468,12 @@ def share_data():
         selected_ids = request.form.getlist('data_ids')  # list of data_point.id strings
 
         if not recipient_email or not selected_ids:
-            flash('Select a user and at least one data item.', 'error')
+            flash('Select a user and at least one data item.', 'share_data:error')
             return redirect(url_for('main.share_data'))
 
         recipient = User.query.filter_by(email=recipient_email).first()
         if not recipient:
-            flash('User not found.', 'error')
+            flash('User not found.', 'share_data:error')
             return redirect(url_for('main.share_data'))
 
         # Create share records
@@ -492,7 +492,7 @@ def share_data():
                 )
                 db.session.add(share)
         db.session.commit()
-        flash(f"Shared {len(selected_ids)} items with {recipient.email}.", 'success')
+        flash(f"Shared {len(selected_ids)} items with {recipient.email}.", 'share_data:success')
         return redirect(url_for('main.share_data'))
 
     return render_template(

@@ -56,9 +56,16 @@
         <div class="card">
             <a href="{{ url_for('main.data_table') }}">📊 View Data Table</a>
         </div>
+        <!-- View Plots -->
+        {% if has_data %}
         <div class="card">
             <a href="{{ url_for('main.select_graph') }}">🗺️ View Plots</a>
         </div>
+        {% else %}
+        <div class="card" style="opacity: 0.5; cursor: not-allowed;" title="Upload or enter data to view plots.">
+            🗺️ View Plots
+        </div>
+        {% endif %}
         <div class="card">
             <a href="{{ url_for('main.forum') }}">💬 Forum</a>
         </div>
@@ -66,14 +73,18 @@
             <a href="{{ url_for('main.manage_data') }}">👤 Data Manager</a>
         </div>
         <div class="card">
-            <a href="#">📧 Email</a>
-        </div>
-        <div class="card">
             <a href="{{ url_for('main.share_data') }}">🔗 Share Data</a>
         </div>
+        <!-- View Shared Data -->
+        {% if has_shared %}
         <div class="card">
             <a href="{{ url_for('main.select_shared_graph') }}">📈 View Shared Data</a>
         </div>
+        {% else %}
+        <div class="card" style="opacity: 0.5; cursor: not-allowed;" title="No shared data to view.">
+            📈 View Shared Data
+        </div>
+        {% endif %}
         <div class="card">
             <a href="{{ url_for('auth.logout') }}">🚪 Log Out</a>
         </div>

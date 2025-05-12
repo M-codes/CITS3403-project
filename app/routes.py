@@ -92,6 +92,23 @@ def delete_datapoint(data_id):
     flash("Data point and all related shares deleted.", "success")
     return redirect(url_for('main.manage_data'))
 
+
+COUNTRIES = [
+    "Afghanistan", "Albania", "Algeria", "Andorra", "Angola",
+    "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
+    "Bangladesh", "Belgium", "Brazil", "Canada", "Chile", "China",
+    "Colombia", "Croatia", "Cuba", "Czech Republic", "Denmark",
+    "Egypt", "Estonia", "Ethiopia", "Finland", "France", "Germany",
+    "Greece", "Hungary", "India", "Indonesia", "Iran", "Iraq",
+    "Ireland", "Israel", "Italy", "Japan", "Kenya", "Latvia",
+    "Lithuania", "Malaysia", "Mexico", "Morocco", "Nepal",
+    "Netherlands", "New Zealand", "Nigeria", "Norway", "Pakistan",
+    "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania",
+    "Russia", "Saudi Arabia", "Serbia", "Singapore", "Slovakia",
+    "Slovenia", "South Africa", "South Korea", "Spain", "Sweden",
+    "Switzerland", "Thailand", "Turkey", "Ukraine", "United Arab Emirates",
+    "United Kingdom", "United States", "Vietnam", "Zimbabwe"
+]
 @bp.route('/manual_entry', methods=['GET', 'POST'])
 def manual_entry():
     # ——— LOGIN GUARD ———
@@ -139,19 +156,7 @@ def manual_entry():
 
         return redirect(url_for('main.manual_entry'))
 
-    # GET: build your country list scoped to this user
-    country_list = [
-        row[0]
-        for row in (
-            db.session
-              .query(DataPoint.region)
-              .filter_by(user_id=session['user_id'])
-              .distinct()
-              .order_by(DataPoint.region)
-              .all()
-        )
-    ]
-    return render_template('manual_entry.html', countries=country_list)
+    return render_template('manual_entry.html', countries=COUNTRIES)
     
 @bp.route('/upload', methods=['POST'])
 def upload():

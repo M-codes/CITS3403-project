@@ -12,10 +12,7 @@ auth_bp = Blueprint('auth', __name__)
 
 
 
-# Create database tables
-@auth_bp.before_app_request
-def create_tables():
-    db.create_all()
+
 
 
 # Register endpoint

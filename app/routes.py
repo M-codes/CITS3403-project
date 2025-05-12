@@ -552,7 +552,7 @@ def select_shared_graph():
     )
 
 
-@bp.route('/map')
+@bp.route('/shared_map')
 def shared_map_view():
     user_id = session['user_id']
     date_str = request.args.get('date')

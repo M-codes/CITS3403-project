@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+from flask_migrate import Migrate
 from app.config import Config  # <--- import your config class
 import os
 import warnings
@@ -8,7 +9,7 @@ import warnings
 warnings.filterwarnings("ignore", message=".*longdouble.*")
 
 db = SQLAlchemy()
-
+migrate = Migrate()
 def create_app():
     app = Flask(__name__)
     app.secret_key = '960610Moon'
@@ -27,14 +28,13 @@ def create_app():
     os.makedirs(os.path.join(app.static_folder, 'uploads'), exist_ok=True)
 
     db.init_app(app)
-    
+    migrate.init_app(app, db)
+
     from .auth import auth_bp
     app.register_blueprint(auth_bp)
 
     from app import routes
     app.register_blueprint(routes.bp)
 
-    with app.app_context():
-        db.create_all()
 
     return app

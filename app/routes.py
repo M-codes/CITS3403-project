@@ -483,7 +483,32 @@ def share_data():
     # Load existing users for dropdown
     users = User.query.filter(User.id != owner_id).order_by(User.email).all()
     # Load owner's data items
-    data_points = DataPoint.query.filter_by(user_id=owner_id).order_by(DataPoint.date.desc()).all()
+    # Start query
+    query = DataPoint.query.filter_by(user_id=owner_id)
+
+    # Filters from query params
+    region = request.args.get('region')
+    if region:
+        query = query.filter(DataPoint.region.ilike(f'%{region}%'))
+
+    date_str = request.args.get('date')
+    if date_str:
+        try:
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            query = query.filter(DataPoint.date == date)
+        except ValueError:
+            flash("Invalid date format (YYYY-MM-DD).", "share_data:warning")
+
+    min_value = request.args.get('min_value', type=float)
+    if min_value is not None:
+        query = query.filter(DataPoint.value >= min_value)
+
+    max_value = request.args.get('max_value', type=float)
+    if max_value is not None:
+        query = query.filter(DataPoint.value <= max_value)
+
+    data_points = query.order_by(DataPoint.date.desc()).all()
+
 
     if request.method == 'POST':
         recipient_email = request.form.get('recipient_email')

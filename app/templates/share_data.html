@@ -23,6 +23,36 @@
 {% endwith %}
   <div class="max-w-3xl mx-auto p-6 bg-white rounded-lg shadow-md">
     <h2 class="text-2xl font-semibold mb-4">Share Your Data</h2>
+    <form method="GET" class="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <input type="text" name="region" placeholder="Filter by Region"
+              value="{{ request.args.get('region', '') }}"
+              class="p-2 border rounded focus:ring-indigo-500" />
+
+        <input type="date" name="date"
+              value="{{ request.args.get('date', '') }}"
+              class="p-2 border rounded focus:ring-indigo-500" />
+
+        <input type="number" name="min_value" placeholder="Min Value"
+              value="{{ request.args.get('min_value', '') }}"
+              step="any"
+              class="p-2 border rounded focus:ring-indigo-500" />
+
+        <input type="number" name="max_value" placeholder="Max Value"
+              value="{{ request.args.get('max_value', '') }}"
+              step="any"
+              class="p-2 border rounded focus:ring-indigo-500" />
+
+        <div class="col-span-full flex justify-end gap-4">
+          <button type="submit"
+                  class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+            Apply Filters
+          </button>
+          <a href="{{ url_for('main.share_data') }}"
+            class="inline-flex items-center gap-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">
+            &#x21BA; Clear Filters
+          </a>
+        </div>
+      </form>
     <form method="post" class="space-y-6">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 

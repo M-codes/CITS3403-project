@@ -62,7 +62,7 @@
             <a href="{{ url_for('main.select_graph') }}">🗺️ View Plots</a>
         </div>
         {% else %}
-        <div class="card" style="opacity: 0.5; cursor: not-allowed;" title="Upload or enter data to view plots.">
+        <div class="card" onclick="alert('Please upload or enter data before viewing plots.')" style="cursor: pointer;">
             🗺️ View Plots
         </div>
         {% endif %}
@@ -81,7 +81,7 @@
             <a href="{{ url_for('main.select_shared_graph') }}">📈 View Shared Data</a>
         </div>
         {% else %}
-        <div class="card" style="opacity: 0.5; cursor: not-allowed;" title="No shared data to view.">
+        <div class="card" onclick="alert('No shared data available. Ask someone to share data with you.')" style="cursor: pointer;">
             📈 View Shared Data
         </div>
         {% endif %}

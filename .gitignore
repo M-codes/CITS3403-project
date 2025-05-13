@@ -50,3 +50,5 @@ uploads/
 
 # Ignore all files in static/plot
 app/static/plots/*
+__pycache__/
+*.pyc

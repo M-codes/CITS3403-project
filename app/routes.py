@@ -13,7 +13,16 @@ bp = Blueprint('main', __name__)
 
 @bp.route('/home')
 def index():
-    return render_template("index.html")
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    
+    user_id = session['user_id']
+    user = User.query.get(user_id)  # Fetch the user object
+
+    has_data = DataPoint.query.filter_by(user_id=session['user_id']).first() is not None
+    has_shared = DataShare.query.filter(DataShare.recipient_id == session['user_id']).first() is not None
+
+    return render_template('index.html', has_data=has_data, has_shared=has_shared,user_email=user.email if user else "Unknown")
 
 
 @bp.route('/data_table')
@@ -86,6 +95,23 @@ def delete_datapoint(data_id):
     flash("Data point and all related shares deleted.", "success")
     return redirect(url_for('main.manage_data'))
 
+
+COUNTRIES = [
+    "Afghanistan", "Albania", "Algeria", "Andorra", "Angola",
+    "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
+    "Bangladesh", "Belgium", "Brazil", "Canada", "Chile", "China",
+    "Colombia", "Croatia", "Cuba", "Czech Republic", "Denmark",
+    "Egypt", "Estonia", "Ethiopia", "Finland", "France", "Germany",
+    "Greece", "Hungary", "India", "Indonesia", "Iran", "Iraq",
+    "Ireland", "Israel", "Italy", "Japan", "Kenya", "Latvia",
+    "Lithuania", "Malaysia", "Mexico", "Morocco", "Nepal",
+    "Netherlands", "New Zealand", "Nigeria", "Norway", "Pakistan",
+    "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania",
+    "Russia", "Saudi Arabia", "Serbia", "Singapore", "Slovakia",
+    "Slovenia", "South Africa", "South Korea", "Spain", "Sweden",
+    "Switzerland", "Thailand", "Turkey", "Ukraine", "United Arab Emirates",
+    "United Kingdom", "United States", "Vietnam", "Zimbabwe"
+]
 @bp.route('/manual_entry', methods=['GET', 'POST'])
 def manual_entry():
     # ——— LOGIN GUARD ———
@@ -133,19 +159,7 @@ def manual_entry():
 
         return redirect(url_for('main.manual_entry'))
 
-    # GET: build your country list scoped to this user
-    country_list = [
-        row[0]
-        for row in (
-            db.session
-              .query(DataPoint.region)
-              .filter_by(user_id=session['user_id'])
-              .distinct()
-              .order_by(DataPoint.region)
-              .all()
-        )
-    ]
-    return render_template('manual_entry.html', countries=country_list)
+    return render_template('manual_entry.html', countries=COUNTRIES)
     
 @bp.route('/upload', methods=['POST'])
 def upload():
@@ -276,7 +290,29 @@ def manage_data():
         return redirect(url_for('main.manage_data'))
 
     # GET: Show all user's data
-    data = DataPoint.query.filter_by(user_id=user_id).all()
+    query = DataPoint.query.filter_by(user_id=user_id)
+
+    region = request.args.get('region', '').strip()
+    filter_date = request.args.get('date')
+    min_value = request.args.get('min_value')
+
+    if region:
+        query = query.filter(DataPoint.region.ilike(f"%{region}%"))
+
+    if filter_date:
+        try:
+            query = query.filter(DataPoint.date == datetime.strptime(filter_date, "%Y-%m-%d").date())
+        except ValueError:
+            flash("Invalid date format", "warning")
+
+    if min_value:
+        try:
+            query = query.filter(DataPoint.value >= float(min_value))
+        except ValueError:
+            flash("Invalid minimum value", "warning")
+
+    data = query.order_by(DataPoint.date.desc()).all()
+
     return render_template('manage_data.html', data=data)
 
 
@@ -447,19 +483,44 @@ def share_data():
     # Load existing users for dropdown
     users = User.query.filter(User.id != owner_id).order_by(User.email).all()
     # Load owner's data items
-    data_points = DataPoint.query.filter_by(user_id=owner_id).order_by(DataPoint.date.desc()).all()
+    # Start query
+    query = DataPoint.query.filter_by(user_id=owner_id)
+
+    # Filters from query params
+    region = request.args.get('region')
+    if region:
+        query = query.filter(DataPoint.region.ilike(f'%{region}%'))
+
+    date_str = request.args.get('date')
+    if date_str:
+        try:
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            query = query.filter(DataPoint.date == date)
+        except ValueError:
+            flash("Invalid date format (YYYY-MM-DD).", "share_data:warning")
+
+    min_value = request.args.get('min_value', type=float)
+    if min_value is not None:
+        query = query.filter(DataPoint.value >= min_value)
+
+    max_value = request.args.get('max_value', type=float)
+    if max_value is not None:
+        query = query.filter(DataPoint.value <= max_value)
+
+    data_points = query.order_by(DataPoint.date.desc()).all()
+
 
     if request.method == 'POST':
         recipient_email = request.form.get('recipient_email')
         selected_ids = request.form.getlist('data_ids')  # list of data_point.id strings
 
         if not recipient_email or not selected_ids:
-            flash('Select a user and at least one data item.', 'error')
+            flash('Select a user and at least one data item.', 'share_data:error')
             return redirect(url_for('main.share_data'))
 
         recipient = User.query.filter_by(email=recipient_email).first()
         if not recipient:
-            flash('User not found.', 'error')
+            flash('User not found.', 'share_data:error')
             return redirect(url_for('main.share_data'))
 
         # Create share records
@@ -478,7 +539,7 @@ def share_data():
                 )
                 db.session.add(share)
         db.session.commit()
-        flash(f"Shared {len(selected_ids)} items with {recipient.email}.", 'success')
+        flash(f"Shared {len(selected_ids)} items with {recipient.email}.", 'share_data:success')
         return redirect(url_for('main.share_data'))
 
     return render_template(
@@ -546,7 +607,7 @@ def select_shared_graph():
     )
 
 
-@bp.route('/map')
+@bp.route('/shared_map')
 def shared_map_view():
     user_id = session['user_id']
     date_str = request.args.get('date')

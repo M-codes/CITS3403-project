@@ -16,6 +16,30 @@
     </a>
 </div>
 
+<form method="GET" class="mb-6 flex flex-wrap gap-4 items-end">
+    <div>
+        <label for="region" class="block text-sm font-medium text-gray-700">Region</label>
+        <input type="text" id="region" name="region" value="{{ request.args.get('region', '') }}"
+               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+    </div>
+    <div>
+    <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
+    <input type="date" id="date" name="date" value="{{ request.args.get('date', '') }}"
+           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+    </div>
+    <div>
+        <label for="min_value" class="block text-sm font-medium text-gray-700">Min Value</label>
+        <input type="number" step="0.01" id="min_value" name="min_value" value="{{ request.args.get('min_value', '') }}"
+               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+    </div>
+    <div>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Filter</button>
+    </div>
+</form>
+<a href="{{ url_for('main.manage_data') }}"
+   class="inline-flex items-center gap-1 px-4 py-1.5 text-sm font-medium text-gray-700 bg-gray-300 rounded-md hover:bg-gray-400 transition-colors duration-200">
+    &#8635; Clear Filters
+</a>
 <!-- Data table -->
 <table class="table-auto w-full border text-sm">
     <thead>

@@ -45,7 +45,9 @@
 </head>
 <body>
     <h1>Infection Monitoring Dashboard</h1>
-
+    <p style="text-align: center; font-size: 1rem; color: #555;">
+    Logged in as: <strong>{{ user_email }}</strong>
+    </p>
     <div class="dashboard">
         <div class="card">
             <a href="{{ url_for('main.upload_page') }}">📄 Upload CSV File</a>
@@ -56,9 +58,16 @@
         <div class="card">
             <a href="{{ url_for('main.data_table') }}">📊 View Data Table</a>
         </div>
+        <!-- View Plots -->
+        {% if has_data %}
         <div class="card">
             <a href="{{ url_for('main.select_graph') }}">🗺️ View Plots</a>
         </div>
+        {% else %}
+        <div class="card" onclick="alert('Please upload or enter data before viewing plots.')" style="cursor: pointer;">
+            🗺️ View Plots
+        </div>
+        {% endif %}
         <div class="card">
             <a href="{{ url_for('main.forum') }}">💬 Forum</a>
         </div>
@@ -66,14 +75,18 @@
             <a href="{{ url_for('main.manage_data') }}">👤 Data Manager</a>
         </div>
         <div class="card">
-            <a href="#">📧 Email</a>
-        </div>
-        <div class="card">
             <a href="{{ url_for('main.share_data') }}">🔗 Share Data</a>
         </div>
+        <!-- View Shared Data -->
+        {% if has_shared %}
         <div class="card">
             <a href="{{ url_for('main.select_shared_graph') }}">📈 View Shared Data</a>
         </div>
+        {% else %}
+        <div class="card" onclick="alert('No shared data available. Ask someone to share data with you.')" style="cursor: pointer;">
+            📈 View Shared Data
+        </div>
+        {% endif %}
         <div class="card">
             <a href="{{ url_for('auth.logout') }}">🚪 Log Out</a>
         </div>

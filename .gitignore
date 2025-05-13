@@ -52,3 +52,7 @@ uploads/
 app/static/plots/*
 __pycache__/
 *.pyc
+
+# Allow example CSVs in static assets
+!app/static/assets/Example.csv
+!app/static/assets/dummydata.csv

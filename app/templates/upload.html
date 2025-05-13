@@ -5,6 +5,33 @@
 {% block content %}
   <h1 class="text-3xl font-semibold mb-6">Upload CSV File</h1>
 
+  <!-- Toggle Down Tab containing the example files-->
+  <div x-data="{ open: false }" class="mb-6">
+    <button @click="open = !open"
+            class="w-full flex justify-between items-center px-4 py-3 bg-blue-100 rounded-md text-blue-800 font-semibold focus:outline-none">
+      Looking for some help?
+      <span x-text="open ? '▲' : '▼'"></span>
+    </button>
+    <div x-show="open" class="mt-2 px-4 py-3 bg-blue-50 rounded-md space-y-3" x-transition>
+      <div>
+        <a href="{{ url_for('static', filename='assets/Example.csv') }}"
+           class="text-blue-700 underline hover:text-blue-900" download>
+          Download Example.csv
+        </a>
+        <span class="text-gray-500 ml-2">(Blank template)</span>
+      </div>
+      <div>
+        <a href="{{ url_for('static', filename='assets/dummydata.csv') }}"
+           class="text-blue-700 underline hover:text-blue-900" download>
+          Download dummydata.csv
+        </a>
+        <span class="text-gray-500 ml-2">(Sample data)</span>
+      </div>
+      <div class="text-xs text-gray-400">To auto-upload dummydata.csv, please use the download and upload it above.</div>
+     <!--Code to go in here for dummy upload-->
+    </div>
+  </div>
+
   {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     <div class="max-w-xl mx-auto space-y-2 mb-6">

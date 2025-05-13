@@ -88,7 +88,14 @@
           window.location.href = '/login-page';
         },
         error: function (xhr) {
-          alert(xhr.responseJSON.message || 'Signup failed');
+          const msg = xhr.responseJSON?.message || 'Signup failed';
+          if (msg.startsWith('Email already registered')) {
+            if (confirm(msg)) {
+              window.location.href = '/login-page';
+            }
+          } else {
+            alert(msg);
+          }
         }
       });
     });

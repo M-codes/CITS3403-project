@@ -226,8 +226,10 @@ def upload():
     if not all_data:
         flash("No usable data found in the file.", 'upload:warning')
         return redirect(url_for('main.upload_page'))
-
+    
+    
     flash(f"Upload successful. Data column '{data_column}' detected. Please select a graph to view.", "upload:success")
+    session['upload_success'] = True #this flag allows you to go into select_graph
     return redirect(url_for('main.select_graph'))
 
 @bp.route('/select_graph', methods=['GET', 'POST'])

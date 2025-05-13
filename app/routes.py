@@ -382,8 +382,24 @@ def map_view():
 
 @bp.route('/line_chart')
 def show_line_graph():
-    # Same code as your existing line chart generation
-    return render_template('result.html', plot_url='plots/time_series_plot.html',plot_type='line')
+    # Fetch data for the current user
+    data = DataPoint.query.filter_by(user_id=session['user_id']).all()
+    if not data:
+        flash("No data available to plot.", "warning")
+        return redirect(url_for('main.select_graph'))
+
+    # Convert to DataFrame
+    df = pd.DataFrame([{'region': d.region, 'date': d.date, 'value': d.value} for d in data])
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
+
+    # Generate the line chart
+    fig = px.line(df, x='date', y='value', color='region', title='Time Series Plot')
+
+    # Save the plot
+    plot_path = os.path.join(current_app.static_folder, 'plots', 'time_series_plot.html')
+    fig.write_html(plot_path)
+
+    return render_template('result.html', plot_url='plots/time_series_plot.html', plot_type='line')
 
 @bp.route('/bar_chart')
 def show_bar_graph():

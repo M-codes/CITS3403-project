@@ -234,6 +234,10 @@ def upload():
 
 @bp.route('/select_graph', methods=['GET', 'POST'])
 def select_graph():
+    if 'user_id' not in session:
+        flash("Please log in first.", "warning")
+        return redirect(url_for('auth.login'))
+
     if not session.get('upload_success'):
         flash("Please upload data first.", "warning")
         return redirect(url_for('main.upload_page'))

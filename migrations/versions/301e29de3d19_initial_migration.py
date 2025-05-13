@@ -30,9 +30,6 @@ def upgrade():
     sa.Column('region', sa.String(length=100), nullable=True),
     sa.Column('date', sa.Date(), nullable=True),
     sa.Column('value', sa.Float(), nullable=True),
-    sa.Column('lower_bound', sa.Float(), nullable=True),
-    sa.Column('upper_bound', sa.Float(), nullable=True),
-    sa.Column('confirmed_deaths', sa.Float(), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')

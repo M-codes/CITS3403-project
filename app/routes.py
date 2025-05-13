@@ -97,17 +97,11 @@ def manual_entry():
         region = request.form.get('region')
         date_str = request.form.get('date')
         value = request.form.get('value')
-        lower = request.form.get('lower_bound')
-        upper = request.form.get('upper_bound')
-        confirmed = request.form.get('confirmed_deaths')
 
         try:
             # Convert the date string to a datetime object
             date = datetime.strptime(date_str, '%Y-%m-%d').date()  # Change format as needed
             value = float(value)
-            lower = float(lower) if lower else None
-            upper = float(upper) if upper else None
-            confirmed = float(confirmed) if confirmed else None
         except ValueError:
             flash("Invalid numeric input or date format.", 'manual_entry:error')
             return redirect(url_for('main.manual_entry'))
@@ -120,9 +114,6 @@ def manual_entry():
                 region=region,
                 date=date,
                 value=value,
-                lower_bound=lower,
-                upper_bound=upper,
-                confirmed_deaths=confirmed,
                 user_id=session['user_id']
             )
             db.session.add(point)

@@ -37,7 +37,7 @@
                 <input type="hidden" id="csrf_token" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="email" id="email" placeholder="Email" class="w-full border p-2 mb-4 rounded" required>
                 <input type="password" id="password" placeholder="Password" class="w-full border p-2 mb-4 rounded" required>
-                <button type="submit" class="w-full bg-purple-300 text-black py-2 rounded">Log In</button>
+                <button id="loginBtn" type="submit" class="w-full bg-purple-300 text-black py-2 rounded transition-colors duration-200">Log In</button>
             </form>
 
             <p class="mt-2 text-sm text-center">
@@ -50,6 +50,33 @@
     </div>
 
 <script>
+    // Button color logic
+    function updateLoginButton() {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const btn = document.getElementById('loginBtn');
+        if (email && password) {
+            btn.classList.remove('bg-purple-300', 'text-black');
+            btn.classList.add('bg-purple-700', 'text-white'); //makes the button go dark purple and the text white to indicate that both inputs are filled
+        } else {
+            btn.classList.remove('bg-purple-700', 'text-white'); //chagnes it back if the inputs arent filled or are cleared 
+            btn.classList.add('bg-purple-300', 'text-black');
+        }
+    }
+
+    // Listen for input events (typing, pasting, autofill)
+    document.getElementById('email').addEventListener('input', updateLoginButton);
+    document.getElementById('password').addEventListener('input', updateLoginButton);
+
+    // Also listen for change events (for autofill in some browsers)
+    document.getElementById('email').addEventListener('change', updateLoginButton);
+    document.getElementById('password').addEventListener('change', updateLoginButton);
+
+    // On page load, check if fields are already filled (e.g., by browser autofill)
+    window.onload = function() {
+        updateLoginButton();
+    };
+
     // Submit login on Enter
     document.getElementById("loginForm").addEventListener("keydown", function (e) {
         if (e.key === "Enter") {
@@ -84,6 +111,8 @@
         setTimeout(() => {
             document.querySelectorAll('[id^="flash-message-"]').forEach(el => el.remove());
         }, 5000);
+        updateLoginButton();
+        setTimeout(updateLoginButton, 2000); // Run again after 2 seconds for autofill
     };
 </script>
 </body>

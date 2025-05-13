@@ -569,7 +569,7 @@ def shared_map_view():
     df['date'] = pd.to_datetime(df['date'], errors='coerce')
     df = df.dropna(subset=['date']).sort_values(by='date')
 
-    title = f"Shared Data from user #{sharer_id}: Excess Deaths {date_str}"
+    title = f"Shared Data from user #{sharer_id}:  Value: {date_str}"
     fig = px.choropleth(
         df,
         locations="region",
@@ -606,7 +606,7 @@ def show_shared_bar():
     if date_str:
         df = df[df['date'] == pd.to_datetime(date_str)]
     df = df.groupby('region', as_index=False).mean(numeric_only=True)
-    fig = px.bar(df, x='region', y='value', title=f"Shared: Avg Excess Deaths ({date_str})")
+    fig = px.bar(df, x='region', y='value', title=f"Shared: Value ({date_str})")
     path = os.path.join(current_app.static_folder, 'plots', 'shared_bar.html')
     fig.write_html(path)
     return render_template('result.html', plot_url='plots/shared_bar.html', plot_type='bar')
@@ -623,7 +623,7 @@ def show_shared_pie():
         df = df[df['date'] == pd.to_datetime(date_str)]
     df = df.groupby('region', as_index=False).sum(numeric_only=True)
     df_top10 = df.nlargest(10, 'value')
-    fig = px.pie(df_top10, values='value', names='region', title=f"Shared: Top 10 Excess Deaths ({date_str})")
+    fig = px.pie(df_top10, values='value', names='region', title=f"Shared: Top 10 highest values ({date_str})")
     path = os.path.join(current_app.static_folder, 'plots', 'shared_pie.html')
     fig.write_html(path)
     return render_template('result.html', plot_url='plots/shared_pie.html', plot_type='pie')

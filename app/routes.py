@@ -123,17 +123,11 @@ def manual_entry():
         region = request.form.get('region')
         date_str = request.form.get('date')
         value = request.form.get('value')
-        lower = request.form.get('lower_bound')
-        upper = request.form.get('upper_bound')
-        confirmed = request.form.get('confirmed_deaths')
 
         try:
             # Convert the date string to a datetime object
             date = datetime.strptime(date_str, '%Y-%m-%d').date()  # Change format as needed
             value = float(value)
-            lower = float(lower) if lower else None
-            upper = float(upper) if upper else None
-            confirmed = float(confirmed) if confirmed else None
         except ValueError:
             flash("Invalid numeric input or date format.", 'manual_entry:error')
             return redirect(url_for('main.manual_entry'))
@@ -146,9 +140,6 @@ def manual_entry():
                 region=region,
                 date=date,
                 value=value,
-                lower_bound=lower,
-                upper_bound=upper,
-                confirmed_deaths=confirmed,
                 user_id=session['user_id']
             )
             db.session.add(point)
@@ -179,6 +170,23 @@ def upload():
 
     all_data = []
     try:
+        # Read the first chunk to validate the structure
+        first_chunk = pd.read_csv(filepath, nrows=1)
+        required_columns = {"Entity", "Day"}
+        if not required_columns.issubset(first_chunk.columns):
+            flash("CSV must contain 'Entity' and 'Day' columns.", 'upload:error')
+            return redirect(url_for('main.upload_page'))
+
+        # Identify the dynamic data column (must be exactly one additional column)
+        data_columns = [col for col in first_chunk.columns if col not in required_columns]
+        if len(data_columns) != 1:
+            flash("CSV must contain exactly one additional data column.", 'upload:error')
+            return redirect(url_for('main.upload_page'))
+
+        data_column = data_columns[0]  # The dynamic column name
+        session['data_column'] = data_column  # Store it in the session for later use
+
+        # Process the file in chunks
         for chunk in pd.read_csv(filepath, chunksize=1000):
             for _, row in chunk.iterrows():
                 # parse region, date, values...
@@ -187,12 +195,9 @@ def upload():
                 if pd.isna(date):
                     continue
 
-                value = row["Cumulative excess deaths per 100,000 people (central estimate)"]
-                lower = row["Cumulative excess deaths per 100,000 people (95% CI, lower bound)"]
-                upper = row["Cumulative excess deaths per 100,000 people (95% CI, upper bound)"]
-                confirmed = row["Total confirmed deaths due to COVID-19 per 100,000 people"]
+                value = row[data_column]
 
-                # — include user_id when checking for duplicates! —
+                # Check for duplicates
                 exists = DataPoint.query.filter_by(
                     region=region,
                     date=date,
@@ -204,31 +209,35 @@ def upload():
                         region=region,
                         date=date,
                         value=value,
-                        lower_bound=lower,
-                        upper_bound=upper,
-                        confirmed_deaths=confirmed,
                         user_id=session['user_id']
                     )
                     db.session.add(dp)
 
-                all_data.append({...})
+                all_data.append({
+                    "region": region,
+                    "date": date,
+                    "value": value
+                })
         db.session.commit()
-    except Exception:
-        flash("Failed to read or process CSV file.", 'upload:error')
+    except Exception as e:
+        flash(f"Failed to read or process CSV file: {str(e)}", 'upload:error')
         return redirect(url_for('main.upload_page'))
 
     if not all_data:
         flash("No usable data found in the file.", 'upload:warning')
         return redirect(url_for('main.upload_page'))
-
-    # ... then regenerate your plots from DataPoint.query.filter_by(user_id=...) ...
-    # (your existing plotting code stays the same)
-    session['upload_success'] = True
-    flash("Upload successful. Please select a graph to view.", "upload:success")
-    return redirect(url_for('main.upload_page'))
+    
+    
+    flash(f"Upload successful. Data column '{data_column}' detected. Please select a graph to view.", "upload:success")
+    session['upload_success'] = True #this flag allows you to go into select_graph
+    return redirect(url_for('main.select_graph'))
 
 @bp.route('/select_graph', methods=['GET', 'POST'])
 def select_graph():
+    if 'user_id' not in session:
+        flash("Please log in first.", "warning")
+        return redirect(url_for('auth.login'))
+
     if not session.get('upload_success'):
         flash("Please upload data first.", "warning")
         return redirect(url_for('main.upload_page'))
@@ -331,8 +340,6 @@ def map_view():
         flash("Invalid date format.", 'error')
         return redirect(url_for('main.index'))
 
-    
-
     data = DataPoint.query.filter_by(user_id=session['user_id']).all()
 
     if not data:
@@ -354,6 +361,10 @@ def map_view():
     # Sort the DataFrame by date to ensure proper animation order
     df = df.sort_values(by='date')
 
+    # Dynamic title based on the uploaded data column
+    data_column = session.get('data_column', 'Data')
+    title = f"{data_column} on {selected_date.strftime('%Y-%m-%d')}"
+
     # Create the choropleth with animation (date slider)
     fig = px.choropleth(
         df,
@@ -363,13 +374,13 @@ def map_view():
         hover_name="region",
         animation_frame="date",  # Date slider will be generated
         color_continuous_scale="Reds",
-        title=f"Excess Deaths on {selected_date.strftime('%Y-%m-%d')}",  # Use the formatted date
-        range_color=[df['value'].min(), df['value'].max()]  # Ensures consistent color scale across all frames
+        title=title,
+        range_color=[df['value'].min(), df['value'].max()] #Ensures consistant colour scale across all frmaes
     )
 
     # Save the plot as an HTML file
     map_path = os.path.join(current_app.static_folder, 'plots/map_plot.html')
-    if os.path.exists(map_path):
+    if (os.path.exists(map_path)):
         os.remove(map_path)
     fig.write_html(map_path)
 
@@ -377,8 +388,24 @@ def map_view():
 
 @bp.route('/line_chart')
 def show_line_graph():
-    # Same code as your existing line chart generation
-    return render_template('result.html', plot_url='plots/time_series_plot.html',plot_type='line')
+    # Fetch data for the current user
+    data = DataPoint.query.filter_by(user_id=session['user_id']).all()
+    if not data:
+        flash("No data available to plot.", "warning")
+        return redirect(url_for('main.select_graph'))
+
+    # Convert to DataFrame
+    df = pd.DataFrame([{'region': d.region, 'date': d.date, 'value': d.value} for d in data])
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
+
+    # Generate the line chart
+    fig = px.line(df, x='date', y='value', color='region', title='Time Series Plot')
+
+    # Save the plot
+    plot_path = os.path.join(current_app.static_folder, 'plots', 'time_series_plot.html')
+    fig.write_html(plot_path)
+
+    return render_template('result.html', plot_url='plots/time_series_plot.html', plot_type='line')
 
 @bp.route('/bar_chart')
 def show_bar_graph():
@@ -397,7 +424,11 @@ def show_bar_graph():
 
     df = df.groupby('region').mean(numeric_only=True).reset_index()
 
-    fig = px.bar(df, x='region', y='value', title=f"Average Excess Deaths by Region ({selected_date})")
+    # Dynamic title based on the uploaded data column
+    data_column = session.get('data_column', 'Data')
+    title = f"{data_column} by Region ({selected_date})"
+
+    fig = px.bar(df, x='region', y='value', title=title)
     path = os.path.join(current_app.static_folder, 'plots/bar_chart.html')
     fig.write_html(path)
     
@@ -423,11 +454,15 @@ def show_pie_chart():
     df = df.groupby('region', as_index=False).sum(numeric_only=True)
     df_top10 = df.sort_values(by='value', ascending=False).head(10)
 
+    # Dynamic title based on the uploaded data column
+    data_column = session.get('data_column', 'Data')
+    title = f"Top 10 Regions for {data_column} ({selected_date})"
+
     fig = px.pie(
         df_top10,
         values='value',
         names='region',
-        title=f'Top 10 Regions by Total Excess Deaths ({selected_date})'
+        title=title
     )
 
     path = os.path.join(current_app.static_folder, 'plots/pie_chart.html')
@@ -617,7 +652,7 @@ def shared_map_view():
     df['date'] = pd.to_datetime(df['date'], errors='coerce')
     df = df.dropna(subset=['date']).sort_values(by='date')
 
-    title = f"Shared Data from user #{sharer_id}: Excess Deaths {date_str}"
+    title = f"Shared Data from user #{sharer_id}:  Value: {date_str}"
     fig = px.choropleth(
         df,
         locations="region",
@@ -654,7 +689,7 @@ def show_shared_bar():
     if date_str:
         df = df[df['date'] == pd.to_datetime(date_str)]
     df = df.groupby('region', as_index=False).mean(numeric_only=True)
-    fig = px.bar(df, x='region', y='value', title=f"Shared: Avg Excess Deaths ({date_str})")
+    fig = px.bar(df, x='region', y='value', title=f"Shared: Value ({date_str})")
     path = os.path.join(current_app.static_folder, 'plots', 'shared_bar.html')
     fig.write_html(path)
     return render_template('result.html', plot_url='plots/shared_bar.html', plot_type='bar')
@@ -671,7 +706,7 @@ def show_shared_pie():
         df = df[df['date'] == pd.to_datetime(date_str)]
     df = df.groupby('region', as_index=False).sum(numeric_only=True)
     df_top10 = df.nlargest(10, 'value')
-    fig = px.pie(df_top10, values='value', names='region', title=f"Shared: Top 10 Excess Deaths ({date_str})")
+    fig = px.pie(df_top10, values='value', names='region', title=f"Shared: Top 10 highest values ({date_str})")
     path = os.path.join(current_app.static_folder, 'plots', 'shared_pie.html')
     fig.write_html(path)
     return render_template('result.html', plot_url='plots/shared_pie.html', plot_type='pie')

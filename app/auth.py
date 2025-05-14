@@ -11,10 +11,6 @@ import requests
 auth_bp = Blueprint('auth', __name__)
 
 
-
-
-
-
 # Register endpoint
 @auth_bp.route('/register', methods=['POST'])
 @csrf.exempt
@@ -24,7 +20,7 @@ def register():
     password = data['password']
 
     if User.query.filter_by(email=email).first():
-        return jsonify({'message': 'Email already registered.'}), 409
+        return jsonify({'message': 'Email already registered, click OK to redirect to login page'}), 409
 
     hashed_password = generate_password_hash(password)
     new_user = User(email=email, password_hash=hashed_password)

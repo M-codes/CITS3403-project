@@ -1,5 +1,20 @@
 {% extends "layout.html" %}
 {% block content %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="mb-4">
+        {% for category, message in messages %}
+          <div class="px-4 py-2 rounded mb-2
+            {% if 'success' in category %}bg-green-100 text-green-800
+            {% elif 'error' in category %}bg-red-100 text-red-800
+            {% elif 'warning' in category %}bg-yellow-100 text-yellow-800
+            {% else %}bg-blue-100 text-blue-800{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
 <h2 class="text-2xl font-bold mb-4">Manage Your Uploaded Data</h2>
 
 <!-- Clear all data -->

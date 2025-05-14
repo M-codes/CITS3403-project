@@ -17,13 +17,18 @@
 
   <div class="w-1/2 flex items-center justify-center p-8 bg-gray-100">
     <div class="w-full max-w-md bg-white p-8 rounded shadow-md">
-      <div class="g-recaptcha mb-4" data-sitekey="6LfnCi8rAAAAAMrlqvYzt9B1jAMEwHIr5FWQPA03"></div>
       <h2 class="text-2xl font-bold mb-6 text-center">Sign Up</h2>
 
       <form id="signupForm" method="POST">
         <input type="email" id="email" name="email" placeholder="Email" class="w-full border p-2 mb-4 rounded" required>
         <input type="password" id="password" name="password" placeholder="Password" class="w-full border p-2 mb-4 rounded" required>
-        <button type="submit" class="w-full bg-purple-300 text-black py-2 rounded">Sign Up</button>
+        <div class="flex justify-center mb-4">
+          <div class="g-recaptcha"
+               data-sitekey="6LfnCi8rAAAAAMrlqvYzt9B1jAMEwHIr5FWQPA03"
+               data-callback="recaptchaCallback"
+               data-expired-callback="recaptchaCallback"></div>
+        </div>
+        <button id="signupBtn" type="submit" class="w-full bg-purple-300 text-black py-2 rounded transition-colors duration-200">Sign Up</button>
       </form>
 
       <p class="mt-4 text-sm text-center">Already have an account?
@@ -33,6 +38,35 @@
   </div>
 
   <script>
+    function updateSignupButton() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const recaptcha = grecaptcha.getResponse();
+      const btn = document.getElementById('signupBtn');
+      if (email && password && recaptcha) {
+        btn.classList.remove('bg-purple-300', 'text-black'); //makes the button purple and the text white if the 3 requirements are met
+        btn.classList.add('bg-purple-700', 'text-white');
+        btn.disabled = false;
+      } else {
+        btn.classList.remove('bg-purple-700', 'text-white'); //changes it back if one of the requirements is changed and is no longer met.
+        btn.classList.add('bg-purple-300', 'text-black');
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('email').addEventListener('input', updateSignupButton);
+    document.getElementById('password').addEventListener('input', updateSignupButton);
+
+    // Called by reCAPTCHA when completed or expired
+    window.recaptchaCallback = function() {
+      updateSignupButton();
+    };
+
+    window.onload = function() {
+      updateSignupButton();
+      setTimeout(updateSignupButton, 2000); // For autofill
+    };
+
     document.getElementById('signupForm').addEventListener('submit', function (e) {
       e.preventDefault();
       const email = document.getElementById('email').value;
@@ -54,7 +88,14 @@
           window.location.href = '/login-page';
         },
         error: function (xhr) {
-          alert(xhr.responseJSON.message || 'Signup failed');
+          const msg = xhr.responseJSON?.message || 'Signup failed';
+          if (msg.startsWith('Email already registered')) {
+            if (confirm(msg)) {
+              window.location.href = '/login-page';
+            }
+          } else {
+            alert(msg);
+          }
         }
       });
     });

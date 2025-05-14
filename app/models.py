@@ -15,10 +15,7 @@ class DataPoint(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     region = db.Column(db.String(100))
     date = db.Column(db.Date)  # Changed to db.Date
-    value = db.Column(db.Float)  # Central estimate
-    lower_bound = db.Column(db.Float)
-    upper_bound = db.Column(db.Float)
-    confirmed_deaths = db.Column(db.Float)
+    value = db.Column(db.Float)  # The inputted value
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     # NEW: Add foreign key to User
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

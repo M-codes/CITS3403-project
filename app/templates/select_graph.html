@@ -3,6 +3,18 @@
 
 <h2 class="text-2xl font-bold mb-6 text-center">Choose a Graph Type</h2>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="mb-4">
+      {% for category, message in messages %}
+        <div class="p-4 mb-4 text-sm rounded {{ 'bg-green-100 text-green-800' if category == 'upload:success' else 'bg-red-100 text-red-800' }}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
 <form method="POST" id="graphForm">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="graph_type" id="graph_type_input">

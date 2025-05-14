@@ -21,7 +21,7 @@ test_password = "Test1234"
 email_input.send_keys(test_email)
 password_input.send_keys(test_password)
 
-# Recaptcha must be handled manually or disabled for testing
+# Recaptch is disabled for testing
 
 password_input.send_keys(Keys.ENTER)
 

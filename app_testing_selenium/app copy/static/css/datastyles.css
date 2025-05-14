@@ -1,0 +1,7 @@
+body{
+    /* background-image: url('/static/assets/login.jpg'); */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-color: #e6e6fa;
+  }

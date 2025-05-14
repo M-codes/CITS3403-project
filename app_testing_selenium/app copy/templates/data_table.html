@@ -1,0 +1,112 @@
+{% extends "layout.html" %}
+{% block title %}Data Table{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+
+<div class="max-w-6xl mx-auto space-y-12 py-8">
+
+  <!-- My Data Points -->
+  <section class="bg-white p-6 rounded-lg shadow">
+    <h2 class="text-2xl font-semibold mb-4">My Data Points</h2>
+    {% if my_data %}
+      <div class="overflow-x-auto">
+        <table id="ownTable" class="display nowrap min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th>Country</th>
+              <th>Date</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in my_data %}
+              <tr>
+                <td>{{ d.region }}</td>
+                <td>{{ d.date }}</td>
+                <td>{{ d.value }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-gray-600">You haven’t added any data yet. 
+        <a href="{{ url_for('main.manual_entry') }}" class="text-indigo-600 hover:underline">Add some now</a>.
+      </p>
+    {% endif %}
+  </section>
+
+  <!-- Data Shared With Me -->
+  <section class="bg-white p-6 rounded-lg shadow">
+    <h2 class="text-2xl font-semibold mb-4">Data Shared With Me</h2>
+    {% if shared_shares %}
+      <div class="overflow-x-auto">
+        <table id="sharedTable" class="display nowrap min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th>Country</th>
+              <th>Date</th>
+              <th>Value</th>
+              <th>Shared By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for share in shared_shares %}
+              {% set d = share.data_point %}
+              <tr>
+                <td>{{ d.region }}</td>
+                <td>{{ d.date }}</td>
+                <td>{{ d.value }}</td>
+                <td>{{ share.owner.email }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-gray-600">No one has shared data with you yet.</p>
+    {% endif %}
+  </section>
+
+  <!-- Return Home Button -->
+  <div class="flex justify-center">
+    <a href="{{ url_for('main.index') }}"
+       class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition">
+      Return to Home
+    </a>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script>
+  $(function () {
+    $('#ownTable, #sharedTable').DataTable({
+      responsive: true,
+      order: [[1, 'desc']],
+      paging: true,
+      info: true,
+      searching: true,
+      initComplete: function () {
+        this.api().columns([0, 1]).every(function () {
+          var column = this;
+          var select = $('<select class="text-xs border rounded ml-1"><option value="">Filter</option></select>')
+            .appendTo($(column.header()))
+            .on('change', function () {
+              var val = $.fn.dataTable.util.escapeRegex($(this).val());
+              column.search(val ? '^' + val + '$' : '', true, false).draw();
+            });
+
+          column.data().unique().sort().each(function (d) {
+            select.append('<option value="' + d + '">' + d + '</option>')
+          });
+        });
+      }
+    });
+  });
+</script>
+{% endblock %}

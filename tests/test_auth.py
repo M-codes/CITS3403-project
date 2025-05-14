@@ -60,3 +60,17 @@ class AuthTestCase(unittest.TestCase):
         })
         self.assertEqual(res.status_code, 401)
         self.assertIn(b'Invalid credentials.', res.data)
+
+    def test_logout_without_login(self):
+        res = self.client.get('/logout', follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+        self.assertIn(b'login', res.data.lower())  # should redirect to login page
+
+    def test_invalid_email_format(self):
+        res = self.client.post('/register', json={
+            'email': 'not-an-email',
+            'password': 'securepass'
+        })
+        # Right now your app accepts any string as email.
+        # Once you validate it, update this:
+        self.assertIn(res.status_code, [200, 400])

@@ -48,10 +48,33 @@
         </div>
     </div>
 
-    <!-- Map View -->
-    <div class="w-full max-w-6xl">
+    <!-- Map View + Share Button -->
+    <div class="w-full max-w-6xl relative" x-data="{ shareModal: false }">
         <h3 class="text-2xl font-semibold mb-4 text-center">Map View</h3>
-        <iframe src="{{ url_for('static', filename=plot_url) }}" width="100%" height="600" frameborder="0" style="border: none;"></iframe>
+        <!-- Share Button -->
+        <button
+            class="absolute top-0 right-0 mt-2 mr-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+            @click="shareModal = true"
+            type="button"
+            id="share-to-forum-btn"
+        >Share to Forum</button>
+        <iframe id="plot-iframe" src="{{ url_for('static', filename=plot_url) }}" width="100%" height="600" frameborder="0" style="border: none;"></iframe>
+
+        <!-- Share Modal -->
+        <div x-show="shareModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+            <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+                <h3 class="text-xl font-bold mb-4">Share to Forum</h3>
+                <form id="share-form" method="POST" action="{{ url_for('main.share_plot_to_forum') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <label for="comment" class="block mb-2 font-semibold">Comment (optional):</label>
+                    <textarea name="comment" id="comment" rows="3" class="w-full border rounded p-2 mb-4"></textarea>
+                    <input type="hidden" name="plot_type" value="{{ plot_type }}">
+                    <input type="hidden" name="plot_url" value="{{ plot_url }}">
+                    <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Share</button>
+                    <button type="button" @click="shareModal = false" class="ml-2 px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- Buttons -->

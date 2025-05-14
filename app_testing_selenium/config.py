@@ -6,8 +6,9 @@ class Config:
     SQLALCHEMY_DATABASE_URI = 'sqlite:///data.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAX_CONTENT_LENGTH = 18 * 1024 * 1024  # 16 MB
-    TESTING = False
-
+    RECAPTCHA_ENABLED = True
 class TestConfig(Config):
-    TESTING = True
-    WTF_CSRF_ENABLED = False  # if you're using Flask-WTF CSRF
+    TESTING = True 
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///test.db'
+    RECAPTCHA_ENABLED = False
+    WTF_CSRF_ENABLED = False 

@@ -2,7 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
-from app.config import Config, TestConfig
+from .config import Config, TestConfig
 import os
 from flask_wtf.csrf import CSRFProtect
 import warnings

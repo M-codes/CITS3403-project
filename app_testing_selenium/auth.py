@@ -6,7 +6,7 @@ from app.models import User
 from flask_wtf.csrf import CSRFProtect
 from app import csrf
 from app.form import RegisterForm
-import requests
+
 # Create the blueprint
 auth_bp = Blueprint('auth', __name__)
 
@@ -66,26 +66,7 @@ def signup_page():
     form = RegisterForm()
     return render_template('signup.html')  # Ensure signup.html is in the templates/ directory
 
-#@auth_bp.route('/api/signup', methods=['POST'])
-def api_signup():
-    if current_app.config.get('TESTING'):
-        return jsonify({'message': 'Test mode: reCAPTCHA bypassed'}), 200
 
-    recaptcha_response = request.json.get('recaptcha_token')
-    secret_key = current_app.config['RECAPTCHA_SECRET_KEY']
-    
-    verify_url = 'https://www.google.com/recaptcha/api/siteverify'
-    payload = {
-        'secret': secret_key,
-        'response': recaptcha_response
-    }
-
-    result = requests.post(verify_url, data=payload).json()
-
-    if not result.get('success'):
-        return jsonify({'message': 'reCAPTCHA failed. Try again.'}), 400
-
-    return jsonify({'message': 'reCAPTCHA verified.'}), 200
 
 
 # Forgot password page route

@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <!--reCAPTCHA removed for selenium testing-->
 </head>
 <body class="min-h-screen flex">
   <div class="w-1/2 bg-purple-800 text-white flex flex-col justify-center items-center p-10 text-purple-100">
@@ -22,12 +22,7 @@
       <form id="signupForm" method="POST">
         <input type="email" id="email" name="email" placeholder="Email" class="w-full border p-2 mb-4 rounded" required>
         <input type="password" id="password" name="password" placeholder="Password" class="w-full border p-2 mb-4 rounded" required>
-        <div class="flex justify-center mb-4">
-          <div class="g-recaptcha"
-               data-sitekey="6LfnCi8rAAAAAMrlqvYzt9B1jAMEwHIr5FWQPA03"
-               data-callback="recaptchaCallback"
-               data-expired-callback="recaptchaCallback"></div>
-        </div>
+        <!--reCAPTCHA removed for selenium testing-->
         <button id="signupBtn" type="submit" class="w-full bg-purple-300 text-black py-2 rounded transition-colors duration-200">Sign Up</button>
       </form>
 
@@ -41,9 +36,9 @@
     function updateSignupButton() {
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value.trim();
-      const recaptcha = grecaptcha.getResponse();
+       
       const btn = document.getElementById('signupBtn');
-      if (email && password && recaptcha) {
+      if (email && password ) {
         btn.classList.remove('bg-purple-300', 'text-black'); //makes the button purple and the text white if the 3 requirements are met
         btn.classList.add('bg-purple-700', 'text-white');
         btn.disabled = false;
@@ -57,10 +52,8 @@
     document.getElementById('email').addEventListener('input', updateSignupButton);
     document.getElementById('password').addEventListener('input', updateSignupButton);
 
-    // Called by reCAPTCHA when completed or expired
-    window.recaptchaCallback = function() {
-      updateSignupButton();
-    };
+   //reCAPTCHA removed for selenium testing
+    
 
     window.onload = function() {
       updateSignupButton();
@@ -71,12 +64,8 @@
       e.preventDefault();
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      const recaptcha = grecaptcha.getResponse();
-
-      if (!recaptcha) {
-        alert('Please verify you are not a robot.');
-        return;
-      }
+      
+    
 
       $.ajax({
         url: '/register',
@@ -88,17 +77,15 @@
           window.location.href = '/login-page';
         },
         error: function (xhr) {
-          const msg = xhr.responseJSON?.message || 'Signup failed';
-          if (msg.startsWith('Email already registered')) {
-            if (confirm(msg)) {
-              window.location.href = '/login-page';
-            }
-          } else {
-            alert(msg);
+           console.log("XHR response:", xhr);
+           const msg = xhr.responseJSON?.message || 'Signup failed (unknown error)';
+           alert("Signup failed: " + msg);
+          
           }
-        }
+        
       });
     });
   </script>
 </body>
 </html>
+ 

@@ -4,21 +4,27 @@ from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import UnexpectedAlertPresentException
 import time
 
-# Set up WebDriver
+# === Setup ===
 driver = webdriver.Chrome()
 driver.implicitly_wait(5)
 
 base_url = "http://127.0.0.1:5000"
 
-# === Helper Functions ===
+def log(msg):
+    print(f"\n🔍 {msg}")
+
+def success(msg, start_time):
+    duration = time.time() - start_time
+    print(f"✅ {msg} (Ran in {duration:.2f}s)")
+
 def handle_possible_alert():
     try:
         alert = driver.switch_to.alert
         print(f"[⚠️ ALERT] {alert.text}")
         alert.accept()
-        time.sleep(1)
+        time.sleep(0.5)
     except:
-        pass  # No alert
+        pass
 
 def wait_for_redirect(expected_keyword, timeout=5):
     for _ in range(timeout * 2):
@@ -28,9 +34,10 @@ def wait_for_redirect(expected_keyword, timeout=5):
     return False
 
 # ==== SIGN UP TEST ====
-print("🔍 Testing Signup...")
-driver.get(f"{base_url}/signup-page")
+log("Testing Signup")
+start = time.time()
 
+driver.get(f"{base_url}/signup-page")
 email_input = driver.find_element(By.ID, "email")
 password_input = driver.find_element(By.ID, "password")
 
@@ -43,47 +50,55 @@ password_input.send_keys(Keys.ENTER)
 
 handle_possible_alert()
 assert wait_for_redirect("login"), "❌ Signup did not redirect to login page"
-print("✅ Signup test passed")
+success("Signup test passed", start)
 
 # ==== LOGIN TEST ====
-print("🔍 Testing Login...")
-driver.get(f"{base_url}/login-page")
+log("Testing Login")
+start = time.time()
 
+driver.get(f"{base_url}/login-page")
 driver.find_element(By.ID, "email").send_keys(test_email)
 driver.find_element(By.ID, "password").send_keys(test_password)
 driver.find_element(By.ID, "password").send_keys(Keys.ENTER)
 
 handle_possible_alert()
 assert wait_for_redirect("/home"), "❌ Login failed or did not redirect to /home"
-print("✅ Login test passed")
+success("Login test passed", start)
 
 # ==== LOGOUT TEST ====
-print("🔍 Testing Logout...")
+log("Testing Logout")
+start = time.time()
+
 driver.get(f"{base_url}/logout")
 time.sleep(1)
 assert "login" in driver.current_url, "❌ Logout did not redirect to login"
-print("✅ Logout test passed")
+success("Logout test passed", start)
 
 # ==== LOGIN WITH INVALID PASSWORD ====
-print("🔍 Testing invalid login...")
-driver.get(f"{base_url}/login-page")
+log("Testing invalid password login")
+start = time.time()
 
+driver.get(f"{base_url}/login-page")
 driver.find_element(By.ID, "email").send_keys(test_email)
 driver.find_element(By.ID, "password").send_keys("WrongPassword123")
 driver.find_element(By.ID, "password").send_keys(Keys.ENTER)
 
 handle_possible_alert()
 assert "login" in driver.current_url, "❌ Invalid login should not redirect"
-print("✅ Invalid password login test passed")
+success("Invalid password login test passed", start)
 
 # ==== VISIT FORGOT PASSWORD PAGE ====
-print("🔍 Testing forgot password page...")
+log("Testing forgot password page")
+start = time.time()
+
 driver.get(f"{base_url}/forgot-password")
 assert "forgot-password" in driver.current_url, "❌ Forgot password page not reachable"
-print("✅ Forgot password page test passed")
+success("Forgot password page test passed", start)
 
 # ==== EMPTY LOGIN SUBMISSION ====
-print("🔍 Testing empty login submission...")
+log("Testing empty login submission")
+start = time.time()
+
 driver.get(f"{base_url}/login-page")
 driver.find_element(By.ID, "email").clear()
 driver.find_element(By.ID, "password").clear()
@@ -91,8 +106,8 @@ driver.find_element(By.ID, "password").send_keys(Keys.ENTER)
 
 handle_possible_alert()
 assert "login" in driver.current_url, "❌ Empty form submission should not redirect"
-print("✅ Empty form login test passed")
+success("Empty form login test passed", start)
 
-# ==== Done ====
-print("🎉 All tests completed successfully.")
+# ==== DONE ====
+print("\n🎉 All tests completed.")
 driver.quit()

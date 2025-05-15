@@ -19,7 +19,8 @@ Mockup design https://www.figma.com/design/apbwOMo7xaG9D8hvylg64a/Surface-Laptop
 
 To launch the app:
 # 1. Create & Activate the virtual environment
-python3 -m venv venv 
+python3 -m venv venv
+
 source venv/bin/activate
 
 # 2. Install required Python packages

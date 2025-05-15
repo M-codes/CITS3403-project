@@ -11,7 +11,7 @@ class AuthTestCase(unittest.TestCase):
             'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
             'WTF_CSRF_ENABLED': False
         })
-        print("Using DB:", self.app.config['SQLALCHEMY_DATABASE_URI'])
+        
         self.client = self.app.test_client()
 
         with self.app.app_context():

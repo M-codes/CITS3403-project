@@ -479,15 +479,18 @@ def upload_post():
 
     file = request.files.get('plot_image')
     comment = request.form.get('comment')
-    email = request.form.get('email')
 
     if not file or not file.filename.endswith('.png'):
         flash("Please upload a valid PNG file.", 'error')
         return redirect(url_for('main.forum'))
 
-    if not email or not comment:
-        flash("Email and comment are required.", 'error')
+    if not comment:
+        flash("Comment is required.", 'error')
         return redirect(url_for('main.forum'))
+
+    # Get current user's email
+    user = User.query.get(session['user_id'])
+    email = user.email if user else "Unknown"
 
     # Save the file
     filename = secure_filename(file.filename)
@@ -500,13 +503,15 @@ def upload_post():
         plot_filename=f'uploads/{filename}',
         comment=comment,
         email=email,
-        user_id=session['user_id']
+        user_id=session['user_id'],
+        created_at=datetime.utcnow()  # Add this line if your model supports it
     )
     db.session.add(shared_plot)
     db.session.commit()
 
     flash("Post uploaded successfully!", 'success')
     return redirect(url_for('main.forum'))
+
 
 @bp.route('/share_data', methods=['GET', 'POST'])
 def share_data():
@@ -710,3 +715,39 @@ def show_shared_pie():
     path = os.path.join(current_app.static_folder, 'plots', 'shared_pie.html')
     fig.write_html(path)
     return render_template('result.html', plot_url='plots/shared_pie.html', plot_type='pie')
+
+@bp.route('/share_plot_to_forum', methods=['POST'])
+def share_plot_to_forum():
+    if 'user_id' not in session:
+        flash("Please log in to share plots.", "warning")
+        return redirect(url_for('auth.login'))
+
+    plot_url = request.form.get('plot_url')  # e.g. 'plots/map_plot.html'
+    comment = request.form.get('comment')
+    plot_type = request.form.get('plot_type')
+
+    # Read the HTML content of the plot
+    plot_path = os.path.join(current_app.static_folder, plot_url)
+    if not os.path.exists(plot_path):
+        flash("Plot file not found.", "error")
+        return redirect(url_for('main.result'))
+
+    with open(plot_path, "r", encoding="utf-8") as f:
+        plot_html = f.read()
+
+    user = User.query.get(session['user_id'])
+    email = user.email if user else "Unknown"
+
+    shared_plot = SharedPlot(
+        plot_html=plot_html,
+        comment=comment,
+        email=email,
+        user_id=session['user_id'],
+        title=f"{plot_type.capitalize()} Plot",
+        created_at=datetime.utcnow()
+    )
+    db.session.add(shared_plot)
+    db.session.commit()
+
+    flash("Plot successfully shared to the forum!", "success")
+    return redirect(url_for('main.forum'))

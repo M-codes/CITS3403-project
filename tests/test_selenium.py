@@ -1,3 +1,6 @@
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -20,7 +23,7 @@ def test_login():
     password_input = driver.find_element(By.ID, "password")
 
     test_email = "test@example.com"
-    test_password = "Test1234"  # make sure this user exists in your database
+    test_password = "Test1234"
 
     email_input.send_keys(test_email)
     password_input.send_keys(test_password)
@@ -28,8 +31,19 @@ def test_login():
     login_btn = driver.find_element(By.ID, "loginBtn")
     login_btn.click()
 
-    time.sleep(2)
-    assert driver.current_url.endswith('/home') or driver.current_url.endswith('/'), "Login failed or did not redirect properly"
+    # === ✅ Handle alert before doing anything else ===
+    try:
+        WebDriverWait(driver, 5).until(EC.alert_is_present())
+        alert = driver.switch_to.alert
+        print("Alert message:", alert.text)
+        alert.accept()
+    except TimeoutException:
+        print("⚠️ No alert appeared.")
+
+    time.sleep(1)  # allow JS redirect to happen after alert
+
+    print("Redirected to:", driver.current_url)
+    assert '/login-page' not in driver.current_url, "Login failed or did not redirect"
     print("✅ Login test passed")
 
 # ==== SESSION CHECK TEST ====

@@ -5,6 +5,7 @@ from app.models import User, DataPoint, SharedPlot, DataShare
 
 class ModelTestCase(unittest.TestCase):
     def setUp(self):
+        # Set up a test Flask app with an in-memory SQLite database and CSRF disabled
         self.app = create_app({
             'TESTING': True,
             'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
@@ -13,15 +14,18 @@ class ModelTestCase(unittest.TestCase):
         print("Using DB:", self.app.config['SQLALCHEMY_DATABASE_URI'])
         self.client = self.app.test_client()
 
+        # Create all tables before each test
         with self.app.app_context():
             db.create_all()
-
+    
     def tearDown(self):
+        # Clean up the database after each test
         with self.app.app_context():
             db.session.remove()
             db.drop_all()
 
     def test_user_creation(self):
+        # Test creating a User and saving to the database
         with self.app.app_context():
             user = User(email='user@example.com', password_hash='hashed123')
             db.session.add(user)
@@ -30,6 +34,7 @@ class ModelTestCase(unittest.TestCase):
             self.assertEqual(User.query.first().email, 'user@example.com')
 
     def test_datapoint_creation(self):
+        # Test creating a DataPoint linked to a User
         with self.app.app_context():
             user = User(email='dp@example.com', password_hash='123')
             db.session.add(user)
@@ -43,6 +48,7 @@ class ModelTestCase(unittest.TestCase):
             self.assertEqual(DataPoint.query.first().region, 'Testland')
 
     def test_shared_plot(self):
+        # Test creating a SharedPlot and linking it to a User
         with self.app.app_context():
             user = User(email='plot@example.com', password_hash='pass')
             db.session.add(user)
@@ -66,6 +72,7 @@ class ModelTestCase(unittest.TestCase):
             self.assertEqual(saved_plot.user.email, 'plot@example.com')
 
     def test_data_share_relationship(self):
+        # Test sharing a DataPoint between two users using DataShare
         with self.app.app_context():
             owner = User(email='owner@example.com', password_hash='pw')
             recipient = User(email='recipient@example.com', password_hash='pw')

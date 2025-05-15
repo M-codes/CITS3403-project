@@ -50,6 +50,7 @@ class ModelTestCase(unittest.TestCase):
 
             plot = SharedPlot(
                 plot_filename='plot1.png',
+                plot_html='<div>Plot HTML</div>',
                 comment='This is important',
                 email='plot@example.com',
                 user_id=user.id,
@@ -58,8 +59,11 @@ class ModelTestCase(unittest.TestCase):
             db.session.add(plot)
             db.session.commit()
 
+            saved_plot = SharedPlot.query.first()
             self.assertEqual(SharedPlot.query.count(), 1)
-            self.assertEqual(SharedPlot.query.first().title, 'Peak Cases')
+            self.assertEqual(saved_plot.title, 'Peak Cases')
+            self.assertEqual(saved_plot.plot_html, '<div>Plot HTML</div>')
+            self.assertEqual(saved_plot.user.email, 'plot@example.com')
 
     def test_data_share_relationship(self):
         with self.app.app_context():

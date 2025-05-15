@@ -24,12 +24,14 @@ class DataPoint(db.Model):
 
 class SharedPlot(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    plot_filename = db.Column(db.String(255), nullable=False)  # Path to the .png file
-    comment = db.Column(db.Text, nullable=True)  # Optional comment
-    email = db.Column(db.String(120), nullable=False)  # Email of the user sharing the plot
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Associated user
+    plot_filename = db.Column(db.String(255), nullable=True)  # Path to the .png file (optional)
+    plot_html = db.Column(db.Text, nullable=True)             # NEW: HTML content of the plot
+    comment = db.Column(db.Text, nullable=True)
+    email = db.Column(db.String(120), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     title = db.Column(db.String(100), nullable=True)
     user = db.relationship('User', backref='shared_plots', lazy=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class DataShare(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -30,6 +30,38 @@ flask db upgrade
 # 4. Run the Flask app
 flask run
 
-# Pages
-sign up page:
-add an email in the email field
+
+To run selenium test:
+# 1. Open a terminal in your project directory
+
+# 2. Activate your virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# 3. install required Python packages
+pip install -r requirements.txt
+
+# 4. Set up the database
+flask db upgrade
+
+# 5. Run the Flask app
+flask run
+
+# 6. A local development browser should start at http://127.0.0.1:5000
+
+# 7. Open the browser (Signup page) and enter the testing account
+Email: test@example.com
+Password: Test1234
+
+# 8. Submit the form to create a test account
+
+# 9. Open a new terminal 
+
+# 10. Make sure the virtual environment is still active or activate it again.
+
+# 11. Run the selenium test script:
+python3 tests/test_selenium.py
+
+# 12. You should see messages like 
+✅ Signup test passed
+✅ Login test passed

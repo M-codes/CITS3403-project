@@ -1,19 +1,24 @@
+<!-- Extends the base layout -->
 {% extends "layout.html" %}
 
 {% block title %}Upload CSV{% endblock %}
 
 {% block content %}
+  <!-- Page Heading -->
   <h1 class="text-3xl font-semibold mb-6">Upload CSV File</h1>
 
   <!-- Toggle Down Tab containing the example files-->
   <div x-data="{ open: false }" class="mb-6">
+    <!-- Button to toggle help section -->
     <button @click="open = !open"
             class="w-full flex justify-between items-center px-4 py-3 bg-blue-100 rounded-md text-blue-800 font-semibold focus:outline-none">
       Looking for some help?
       <span x-text="open ? '▲' : '▼'"></span>
     </button>
+    <!-- Help section with example file downloads and auto-upload -->
     <div x-show="open" class="mt-2 px-4 py-3 bg-blue-50 rounded-md space-y-3" x-transition>
       <div>
+        <!-- Download link for blank template -->
         <a href="{{ url_for('static', filename='assets/Example.csv') }}"
            class="text-blue-700 underline hover:text-blue-900" download>
           Download Example.csv
@@ -21,6 +26,7 @@
         <span class="text-gray-500 ml-2">(Blank template)</span>
       </div>
       <div>
+        <!-- Download link for sample data -->
         <a href="{{ url_for('static', filename='assets/dummydata.csv') }}"
            class="text-blue-700 underline hover:text-blue-900" download>
           Download dummydata.csv
@@ -29,6 +35,7 @@
       </div>
       <div class="text-xs text-gray-400">To auto-upload dummydata.csv, please use the download and upload it above.</div>
       <div>
+        <!-- Button to auto-upload dummydata.csv via AJAX -->
         <button id="auto-upload-btn"
                 type="button"
                 class="flex items-center px-3 py-2 bg-blue-200 text-blue-900 rounded hover:bg-blue-300 transition">
@@ -36,6 +43,7 @@
         </button>
         <span class="text-xs text-yellow-700 ml-2">(Experimental: uploads sample data and redirects)</span>
       </div>
+      <!-- JavaScript for auto-upload functionality -->
       <script>
       document.getElementById('auto-upload-btn').onclick = async function() {
         const btn = this;
@@ -76,6 +84,7 @@
     </div>
   </div>
 
+  <!-- Flash messages for upload feedback -->
   {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     <div class="max-w-xl mx-auto space-y-2 mb-6">
@@ -87,6 +96,7 @@
                'bg-yellow-600' if category == 'warning' else 
                'bg-blue-600' }}">
           <span>{{ message }}</span>
+          <!-- Button to dismiss the flash message -->
           <button onclick="this.parentElement.remove()" class="ml-4 text-white font-bold">×</button>
         </div>
         {% endif %}
@@ -94,16 +104,19 @@
     </div>
   {% endif %}
 {% endwith %}
-
+  
+  <!-- CSV Upload Form -->
   <form action="{{ url_for('main.upload') }}" method="POST" enctype="multipart/form-data" class="bg-white p-6 rounded-lg shadow-lg">
+    <!-- CSRF token for security -->
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
    
     <div class="mb-4">
+      <!-- File input for CSV upload -->
       <input type="file" name="file" accept=".csv" required class="w-full p-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
     </div>
     <button type="submit" class="w-full py-3 mt-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Upload</button>
   </form>
-  <!-- Buttons -->
+  <!-- Return to Home Button -->
 <div class="flex justify-center gap-4 mt-8">
   <a href="{{ url_for('main.index') }}" class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">Return to Home</a>
 </div>

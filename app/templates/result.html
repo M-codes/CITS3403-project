@@ -9,6 +9,7 @@
 
     <!-- Toggleable Explanation Section -->
     <div x-data="{ showInfo: false }" class="w-full max-w-4xl mb-4">
+        <!-- Button to show/hide the explanation panel -->
         <button 
             @click="showInfo = !showInfo"
             class="mb-4 px-4 py-2 bg-yellow-400 text-black font-semibold rounded-md shadow hover:bg-yellow-500 transition"
@@ -16,6 +17,7 @@
             What does this mean?
         </button>
 
+        <!-- Explanation panel, content changes based on plot type -->
         <div x-show="showInfo" x-transition class="bg-gray-100 p-6 rounded-lg shadow text-gray-800 text-sm leading-relaxed">
             <h3 class="text-lg font-bold mb-3">Understanding the Visualization</h3>
 
@@ -51,16 +53,17 @@
     <!-- Map View + Share Button -->
     <div class="w-full max-w-6xl relative" x-data="{ shareModal: false }">
         <h3 class="text-2xl font-semibold mb-4 text-center">Map View</h3>
-        <!-- Share Button -->
+        <!-- Button to open the share-to-forum modal -->
         <button
             class="absolute top-0 right-0 mt-2 mr-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
             @click="shareModal = true"
             type="button"
             id="share-to-forum-btn"
         >Share to Forum</button>
+        <!-- Embedded plot (iframe) -->
         <iframe id="plot-iframe" src="{{ url_for('static', filename=plot_url) }}" width="100%" height="600" frameborder="0" style="border: none;"></iframe>
 
-        <!-- Share Modal -->
+        <!-- Share Modal (pops up when Share button is clicked) -->
         <div x-show="shareModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
             <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
                 <h3 class="text-xl font-bold mb-4">Share to Forum</h3>
@@ -77,9 +80,11 @@
         </div>
     </div>
 
-    <!-- Buttons -->
+    <!-- Navigation Buttons -->
     <div class="flex justify-center gap-4 mt-8">
+        <!-- Button to upload another file -->
       <a href="{{ url_for('main.upload_page') }}" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Upload Another File</a>
+      <!-- Button to return to homepage -->
       <a href="{{ url_for('main.index') }}" class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">Return to Home</a>
     </div>
 

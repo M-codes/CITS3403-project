@@ -15,7 +15,7 @@ db = SQLAlchemy()
 csrf = CSRFProtect()
 migrate = Migrate()
 
-def create_app():
+def create_app(test_config=None):
     app = Flask(__name__)
     app.secret_key = '960610Moon'
     
@@ -23,8 +23,13 @@ def create_app():
     
     # Configs
     app.config.from_object(Config)  # <--- load config from the class
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-    app.config['RECAPTCHA_SECRET_KEY'] = '6LfnCi8rAAAAAMHL8op0mE8gL-gXKyXjoLTuckbX'
+
+    # Override with test config if provided
+    if test_config:
+        app.config.update(test_config)
+
+    app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite:///app.db')
+    app.config.setdefault('RECAPTCHA_SECRET_KEY', '6LfnCi8rAAAAAMHL8op0mE8gL-gXKyXjoLTuckbX')
 
     
     CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})

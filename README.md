@@ -15,6 +15,7 @@ Mockup design https://www.figma.com/design/apbwOMo7xaG9D8hvylg64a/Surface-Laptop
 | 23237074    | Michael Hii Rong Mee     | M-codes     |
 | 23887375   | Kate Fu     | Kateefu    |
 | 23390948   | Darcy Tyler     | dtyler04     |
+| 23153032   | Dan Wiese    |   |
 
 To launch the app:
 # 1. Activate the virtual environment

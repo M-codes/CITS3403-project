@@ -5,11 +5,15 @@
   <meta charset="UTF-8">
   <title>Sign Up</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Tailwind CSS for styling -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+   <!-- jQuery for AJAX functionality -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- Google reCAPTCHA -->
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="min-h-screen flex">
+  <!-- Left panel with welcome message -->
   <div class="w-1/2 bg-purple-800 text-white flex flex-col justify-center items-center p-10 text-purple-100">
     <h1 class="text-4xl font-bold mb-4">Welcome to CITS3403 Group 43's Project</h1>
     <p class="text-lg text-center max-w-md">Create your account to plot up to date infection data, and share with others.</p>
@@ -18,11 +22,12 @@
   <div class="w-1/2 flex items-center justify-center p-8 bg-gray-100">
     <div class="w-full max-w-md bg-white p-8 rounded shadow-md">
       <h2 class="text-2xl font-bold mb-6 text-center">Sign Up</h2>
-
+      <!-- Signup Form-->
       <form id="signupForm" method="POST">
         <input type="email" id="email" name="email" placeholder="Email" class="w-full border p-2 mb-4 rounded" required>
         <input type="password" id="password" name="password" placeholder="Password" class="w-full border p-2 mb-4 rounded" required>
         <div class="flex justify-center mb-4">
+          <!-- Google reCAPTCHA -->
           <div class="g-recaptcha"
                data-sitekey="6LfnCi8rAAAAAMrlqvYzt9B1jAMEwHIr5FWQPA03"
                data-callback="recaptchaCallback"
@@ -39,6 +44,7 @@
 
   <script>
     function updateSignupButton() {
+      // Check if email and password fields are filled and reCAPTCHA is completed
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value.trim();
       const recaptcha = grecaptcha.getResponse();
@@ -53,7 +59,7 @@
         btn.disabled = false;
       }
     }
-
+    // Update button state on input change
     document.getElementById('email').addEventListener('input', updateSignupButton);
     document.getElementById('password').addEventListener('input', updateSignupButton);
 
@@ -66,29 +72,29 @@
       updateSignupButton();
       setTimeout(updateSignupButton, 2000); // For autofill
     };
-
+    // Handle form submission
     document.getElementById('signupForm').addEventListener('submit', function (e) {
       e.preventDefault();
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const recaptcha = grecaptcha.getResponse();
-
+      // Check if reCAPTCHA is completed
       if (!recaptcha) {
         alert('Please verify you are not a robot.');
         return;
       }
-
+      // Send AJAX request to server
       $.ajax({
         url: '/register',
         method: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({ email, password }),
+        data: JSON.stringify({ email, password }), //
         success: function (res) {
           alert(res.message);
           window.location.href = '/login-page';
         },
         error: function (xhr) {
-          const msg = xhr.responseJSON?.message || 'Signup failed';
+          const msg = xhr.responseJSON?.message || 'Signup failed'; //
           if (msg.startsWith('Email already registered')) {
             if (confirm(msg)) {
               window.location.href = '/login-page';

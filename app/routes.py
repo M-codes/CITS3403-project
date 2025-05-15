@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, current_app, flash, redirect, url_for, session
 from werkzeug.utils import secure_filename
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, UTC
 import plotly.express as px
 import os
 
@@ -517,7 +517,7 @@ def upload_post():
         comment=comment,
         email=email,
         user_id=session['user_id'],
-        created_at=datetime.utcnow()  # Add this line if your model supports it
+        created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC)) 
     )
     db.session.add(shared_plot)
     db.session.commit()
@@ -762,7 +762,7 @@ def share_plot_to_forum():
         email=email,
         user_id=session['user_id'],
         title=f"{plot_type.capitalize()} Plot",
-        created_at=datetime.utcnow()
+        created_at=datetime.now(UTC)
     )
     db.session.add(shared_plot)
     db.session.commit()

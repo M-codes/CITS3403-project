@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime
+from datetime import datetime, UTC
 from app import create_app, db
 from app.models import User, DataPoint, SharedPlot, DataShare
 
@@ -79,7 +79,7 @@ class ModelTestCase(unittest.TestCase):
             db.session.add_all([owner, recipient])
             db.session.commit()
 
-            dp = DataPoint(region='SharedRegion', date=datetime.utcnow().date(), value=9.9, user_id=owner.id)
+            dp = DataPoint(region='SharedRegion', date=datetime.now(UTC).date(), value=9.9, user_id=owner.id)
             db.session.add(dp)
             db.session.commit()
 

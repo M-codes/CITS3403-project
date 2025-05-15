@@ -17,7 +17,7 @@ auth_bp = Blueprint('auth', __name__)
 def register():
     data = request.get_json()
     email = data['email']
-    password = data['password']
+    password = data['password'] # Ensure this is hashed
 
     if User.query.filter_by(email=email).first():
         return jsonify({'message': 'Email already registered, click OK to redirect to login page'}), 409
@@ -72,7 +72,7 @@ def api_signup():
     recaptcha_response = request.json.get('recaptcha_token')
     secret_key = '6LfnCi8rAAAAAMHL8op0mE8gL-gXKyXjoLTuckbX'
 
-    verify_url = 'https://www.google.com/recaptcha/api/siteverify'
+    verify_url = 'https://www.google.com/recaptcha/api/siteverify' # URL to verify the reCAPTCHA response
     payload = {
         'secret': secret_key,
         'response': recaptcha_response

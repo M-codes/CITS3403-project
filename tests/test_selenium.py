@@ -6,7 +6,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import time
 
-# You can use ChromeOptions to hide the browser
+# This script is for testing a Flask web application using Selenium WebDriver.
+# It includes tests for login, session check, logout, invalid login, forgot password link,
+# And UI elements on the login page.
 options = webdriver.ChromeOptions()
 options.add_argument("--start-maximized")  # or "--headless" to run without UI
 
@@ -21,7 +23,8 @@ def test_login():
 
     email_input = driver.find_element(By.ID, "email")
     password_input = driver.find_element(By.ID, "password")
-
+    
+    # Use a valid email and password for testing
     test_email = "test@example.com"
     test_password = "Test1234"
 
@@ -31,7 +34,7 @@ def test_login():
     login_btn = driver.find_element(By.ID, "loginBtn")
     login_btn.click()
 
-    # === ✅ Handle alert before doing anything else ===
+    # Handle alert before doing anything else 
     try:
         WebDriverWait(driver, 5).until(EC.alert_is_present())
         alert = driver.switch_to.alert

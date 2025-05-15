@@ -52,6 +52,7 @@ def test_session_check():
     assert '"logged_in": true' in driver.page_source or 'true' in driver.page_source
     print("✅ Session check passed")
 
+
 # ==== LOGOUT TEST ====
 def test_logout():
     driver.get(f"{base_url}/logout")
@@ -60,11 +61,50 @@ def test_logout():
     assert '"logged_in": false' in driver.page_source or 'false' in driver.page_source
     print("✅ Logout test passed")
 
-# ==== RUN TESTS ====
+# ==== INVALID LOGIN TEST ====
+def test_invalid_login():
+    driver.get(f"{base_url}/login-page")
+
+    driver.find_element(By.ID, "email").send_keys("wrong@example.com")
+    driver.find_element(By.ID, "password").send_keys("WrongPass123")
+    driver.find_element(By.ID, "loginBtn").click()
+
+    try:
+        WebDriverWait(driver, 5).until(EC.alert_is_present())
+        alert = driver.switch_to.alert
+        print("Alert message:", alert.text)
+        assert "Invalid credentials" in alert.text
+        alert.accept()
+        print("✅ Invalid login test passed")
+    except TimeoutException:
+        print("❌ No alert appeared for invalid login")
+
+# ==== FORGOT PASSWORD LINK TEST ====
+def test_forgot_password_link():
+    driver.get(f"{base_url}/login-page")
+    forgot_link = driver.find_element(By.LINK_TEXT, "Forgot your password?")
+    forgot_link.click()
+    time.sleep(1)
+    assert "forgot-password" in driver.current_url
+    print("✅ Forgot password link test passed")
+
+# ==== LOGIN PAGE UI ELEMENTS TEST ====
+def test_login_page_ui_elements():
+    driver.get(f"{base_url}/login-page")
+    assert driver.find_element(By.ID, "email")
+    assert driver.find_element(By.ID, "password")
+    assert driver.find_element(By.ID, "loginBtn")
+    print("✅ Login page UI elements test passed")
+    print("Congratulations! You have now passed all selenium tests in our project.🥰")
+    
+# ==== RUN ALL TESTS ====
 if __name__ == "__main__":
     try:
         test_login()
         test_session_check()
         test_logout()
+        test_invalid_login()
+        test_forgot_password_link()
+        test_login_page_ui_elements()
     finally:
         driver.quit()

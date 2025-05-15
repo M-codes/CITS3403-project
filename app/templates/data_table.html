@@ -2,16 +2,18 @@
 {% block title %}Data Table{% endblock %}
 
 {% block content %}
+<!-- DataTables CSS for enhanced table features -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
 
 <div class="max-w-6xl mx-auto space-y-12 py-8">
 
-  <!-- My Data Points -->
+  <!-- My Data Points Section -->
   <section class="bg-white p-6 rounded-lg shadow">
     <h2 class="text-2xl font-semibold mb-4">My Data Points</h2>
     {% if my_data %}
       <div class="overflow-x-auto">
+        <!-- Table of user's own data points -->
         <table id="ownTable" class="display nowrap min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
@@ -32,17 +34,19 @@
         </table>
       </div>
     {% else %}
+    <!-- Message if user has not added any data -->
       <p class="text-gray-600">You haven’t added any data yet. 
         <a href="{{ url_for('main.manual_entry') }}" class="text-indigo-600 hover:underline">Add some now</a>.
       </p>
     {% endif %}
   </section>
 
-  <!-- Data Shared With Me -->
+  <!-- Data Shared With Me Section -->
   <section class="bg-white p-6 rounded-lg shadow">
     <h2 class="text-2xl font-semibold mb-4">Data Shared With Me</h2>
     {% if shared_shares %}
       <div class="overflow-x-auto">
+        <!-- Table of data shared with the user -->
         <table id="sharedTable" class="display nowrap min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
@@ -66,6 +70,7 @@
         </table>
       </div>
     {% else %}
+    <!-- Message if no data has been shared with the user -->
       <p class="text-gray-600">No one has shared data with you yet.</p>
     {% endif %}
   </section>
@@ -79,18 +84,20 @@
   </div>
 </div>
 
-<!-- Scripts -->
+<!-- DataTables and jQuery scripts for interactive tables -->
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 <script>
   $(function () {
+    // Initialize DataTables for both tables
     $('#ownTable, #sharedTable').DataTable({
       responsive: true,
       order: [[1, 'desc']],
       paging: true,
       info: true,
       searching: true,
+      // Add filter dropdowns to Country and Date columns
       initComplete: function () {
         this.api().columns([0, 1]).every(function () {
           var column = this;

@@ -749,5 +749,5 @@ def share_plot_to_forum():
     db.session.add(shared_plot)
     db.session.commit()
 
-    flash("Plot successfully shared to the forum!", "success")
+    flash("Plot successfully shared to the forum!", "share:success")
     return redirect(url_for('main.forum'))

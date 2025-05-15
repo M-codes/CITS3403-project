@@ -63,5 +63,5 @@ Password: Test1234
 python3 tests/test_selenium.py
 
 # 12. You should see messages like 
-✅ Signup test passed
+✅ Session check passed
 ✅ Login test passed

@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <title>Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Tailwind CSS for styling -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- jQuery for AJAX functionality -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body class="min-h-screen flex">
@@ -19,7 +21,7 @@
     <div class="w-1/2 flex items-center justify-center p-8 bg-gray-100">
         <div class="w-full max-w-md bg-white p-8 rounded shadow-md">
             <h2 class="text-2xl font-bold mb-6 text-center">Log In</h2>
-
+            <!-- Flash Message -->
             {% with messages = get_flashed_messages(with_categories=true) %}
               {% if messages %}
                 <ul class="mb-4">
@@ -32,7 +34,7 @@
                 </ul>
               {% endif %}
             {% endwith %}
-
+            
             <form id="loginForm">
                 <input type="hidden" id="csrf_token" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="email" id="email" placeholder="Email" class="w-full border p-2 mb-4 rounded" required>
@@ -90,7 +92,7 @@
         const email = $('#email').val();
         const password = $('#password').val();
         const csrfToken = $('#csrf_token').val();
-
+    // Perform AJAX request to login
         $.ajax({
             url: '/login',
             method: 'POST',
@@ -106,7 +108,7 @@
             }
         });
     });
-
+    //
     window.onload = () => {
         setTimeout(() => {
             document.querySelectorAll('[id^="flash-message-"]').forEach(el => el.remove());

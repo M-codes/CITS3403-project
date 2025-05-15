@@ -18,7 +18,8 @@ Mockup design https://www.figma.com/design/apbwOMo7xaG9D8hvylg64a/Surface-Laptop
 | 23153032   | Dan Wiese    |   |
 
 To launch the app:
-# 1. Activate the virtual environment
+# 1. Create & Activate the virtual environment
+python3 -m venv venv 
 source venv/bin/activate
 
 # 2. Install required Python packages

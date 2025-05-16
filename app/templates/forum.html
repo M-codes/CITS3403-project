@@ -14,7 +14,25 @@
     <!-- Header Bar for visual separation -->
     <div class="header-bar h-16 bg-purple-800 shadow-md"></div>
 
-    <!-- Navigation: Return to Home button -->
+<!--Code for showing flash messages taken from select_graph.html-->    
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="mb-4">
+      {% for category, message in messages %}
+        <div class="p-4 mb-4 text-sm rounded flex justify-between items-center
+          {% if 'success' in category %}bg-green-100 text-green-800
+          {% elif 'error' in category %}bg-red-100 text-red-800
+          {% elif 'warning' in category %}bg-yellow-100 text-yellow-800
+          {% else %}bg-blue-100 text-blue-800{% endif %}"
+          id="flash-message-{{ loop.index }}">
+          <span>{{ message }}</span>
+          <button class="ml-4 text-xl font-bold focus:outline-none" onclick="document.getElementById('flash-message-{{ loop.index }}').remove()">✕</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+<!-- Navigation: Return to Home button -->
     <div class="flex justify-center gap-4 mt-8">
         <a href="{{ url_for('main.index') }}" class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
             Return to Home
@@ -37,7 +55,12 @@
                     {% endif %}
                     <p class="text-gray-700"><strong>Email:</strong> {{ post.email }}</p>
                     <p class="text-gray-700"><strong>Comment:</strong> {{ post.comment }}</p>
-                    <p class="text-gray-500 text-sm"><strong>Posted:</strong> {{ post.created_at.strftime('%Y-%m-%d %H:%M') if post.created_at else 'Unknown' }}</p>
+                    <p class="text-gray-500 text-sm">
+                      <strong>Posted:</strong>
+                      <span class="utc-time" data-utc="{{ post.created_at.isoformat() }}Z">
+                        {{ post.created_at.strftime('%Y-%m-%d %H:%M') if post.created_at else 'Unknown' }}
+                      </span>
+                    </p>
                 </div>
                 {% endfor %}
                 {% if posts|length == 0 %}
@@ -67,4 +90,22 @@
         </div>
     </div>
 </body>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+  document.querySelectorAll('.utc-time').forEach(function(span) {
+    let utcString = span.getAttribute('data-utc');
+    if (utcString && !utcString.endsWith('Z') && !utcString.includes('+')) {
+      utcString += 'Z'; // force UTC if no offset
+    }
+    if (utcString) {
+      const date = new Date(utcString);
+      const localString = date.toLocaleString(undefined, {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      });
+      span.textContent = localString;
+    }
+  });
+});
+</script>
 </html>

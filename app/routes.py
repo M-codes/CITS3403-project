@@ -1,37 +1,39 @@
 from flask import Blueprint, render_template, request, current_app, flash, redirect, url_for, session
 from werkzeug.utils import secure_filename
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, UTC
 import plotly.express as px
 import os
 
 from app import db
-from app.models import DataPoint,DataShare, User
-from app.models import SharedPlot
+from app.models import DataPoint, DataShare, User, SharedPlot
 
 bp = Blueprint('main', __name__)
 
 @bp.route('/home')
 def index():
+    # If not logged in, boot them to login page
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
     
     user_id = session['user_id']
-    user = User.query.get(user_id)  # Fetch the user object
+    user = User.query.get(user_id)  # Get the user object from DB
 
-    has_data = DataPoint.query.filter_by(user_id=session['user_id']).first() is not None
-    has_shared = DataShare.query.filter(DataShare.recipient_id == session['user_id']).first() is not None
+    # Check if user has uploaded any data or has data shared to them
+    has_data = DataPoint.query.filter_by(user_id=user_id).first() is not None
+    has_shared = DataShare.query.filter(DataShare.recipient_id == user_id).first() is not None
 
-    return render_template('index.html', has_data=has_data, has_shared=has_shared,user_email=user.email if user else "Unknown")
+    return render_template('index.html', has_data=has_data, has_shared=has_shared, user_email=user.email if user else "Unknown")
 
 
 @bp.route('/data_table')
 def data_table():
+    # Don't let people see data if not logged in
     if 'user_id' not in session:
         flash("Please log in to view your data.", 'warning')
         return redirect(url_for('auth.home'))
 
-    # 1) Your own DataPoints
+    # 1) Your own DataPoints (all of them, newest first)
     my_data = (
         DataPoint.query
         .filter_by(user_id=session['user_id'])
@@ -39,7 +41,7 @@ def data_table():
         .all()
     )
 
-    # 2) All DataShares _to_ you
+    # 2) All DataShares _to_ you (i.e. stuff others shared with you)
     shared_shares = (
         DataShare.query
         .filter_by(recipient_id=session['user_id'])
@@ -53,7 +55,7 @@ def data_table():
         .all()
     )
 
-    # DEBUG: print out what we fetched
+    # DEBUG: print out what we fetched (for devs, not prod)
     print("SHARED SHARES:", [(s.owner.email, s.data_point.id) for s in shared_shares])
 
     return render_template(
@@ -65,21 +67,25 @@ def data_table():
 
 @bp.route('/upload_page')
 def upload_page():
+    # Just show the upload page (no logic here)
     return render_template("upload.html")
 
 @bp.route('/forum')
 def forum():
+    # Show all posts in the forum, newest first
     posts = SharedPlot.query.order_by(SharedPlot.id.desc()).all()
     return render_template("forum.html", posts=posts)
 
 @bp.route('/delete_datapoint/<int:data_id>', methods=['POST'])
 def delete_datapoint(data_id):
+    # Only logged in users can delete
     if 'user_id' not in session:
         flash("You must be logged in to delete data.", "error")
         return redirect(url_for('auth.login'))
 
     user_id = session['user_id']
 
+    # Only delete if you own it
     dp = DataPoint.query.filter_by(id=data_id, user_id=user_id).first()
     if not dp:
         flash("Data not found or unauthorized.", "warning")
@@ -88,7 +94,7 @@ def delete_datapoint(data_id):
     # First delete related shares (if any)
     DataShare.query.filter_by(data_id=data_id).delete()
 
-    # Now delete the data point
+    # Now delete the data point itself
     db.session.delete(dp)
     db.session.commit()
 
@@ -97,6 +103,7 @@ def delete_datapoint(data_id):
 
 
 COUNTRIES = [
+    # List of countries for manual entry dropdown (not exhaustive, but covers most)
     "Afghanistan", "Albania", "Algeria", "Andorra", "Angola",
     "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
     "Bangladesh", "Belgium", "Brazil", "Canada", "Chile", "China",
@@ -112,9 +119,10 @@ COUNTRIES = [
     "Switzerland", "Thailand", "Turkey", "Ukraine", "United Arab Emirates",
     "United Kingdom", "United States", "Vietnam", "Zimbabwe"
 ]
+
 @bp.route('/manual_entry', methods=['GET', 'POST'])
 def manual_entry():
-    # ——— LOGIN GUARD ———
+    # --- LOGIN GUARD ---
     if 'user_id' not in session:
         flash("Please log in first.", "warning")
         return redirect(url_for('auth.login'))
@@ -125,13 +133,14 @@ def manual_entry():
         value = request.form.get('value')
 
         try:
-            # Convert the date string to a datetime object
-            date = datetime.strptime(date_str, '%Y-%m-%d').date()  # Change format as needed
+            # Try to parse the date and value (user might typo these)
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
             value = float(value)
         except ValueError:
             flash("Invalid numeric input or date format.", 'manual_entry:error')
             return redirect(url_for('main.manual_entry'))
 
+        # Only add if all fields are present and value is a number
         if region and date and pd.notnull(value):
             exists = DataPoint.query.filter_by(region=region, date=date, user_id=session['user_id']).first()
 
@@ -154,7 +163,7 @@ def manual_entry():
     
 @bp.route('/upload', methods=['POST'])
 def upload():
-    # ——— LOGIN GUARD ———
+    # --- LOGIN GUARD ---
     if 'user_id' not in session:
         flash("Please log in first.", "warning")
         return redirect(url_for('auth.login'))
@@ -170,23 +179,23 @@ def upload():
 
     all_data = []
     try:
-        # Read the first chunk to validate the structure
+        # Read the first chunk to validate the structure (make sure columns are right)
         first_chunk = pd.read_csv(filepath, nrows=1)
         required_columns = {"Entity", "Day"}
         if not required_columns.issubset(first_chunk.columns):
             flash("CSV must contain 'Entity' and 'Day' columns.", 'upload:error')
             return redirect(url_for('main.upload_page'))
 
-        # Identify the dynamic data column (must be exactly one additional column)
+        # Identify the dynamic data column (must be exactly one extra column)
         data_columns = [col for col in first_chunk.columns if col not in required_columns]
         if len(data_columns) != 1:
             flash("CSV must contain exactly one additional data column.", 'upload:error')
             return redirect(url_for('main.upload_page'))
 
-        data_column = data_columns[0]  # The dynamic column name
+        data_column = data_columns[0]  # The dynamic column name (e.g. "Cases")
         session['data_column'] = data_column  # Store it in the session for later use
 
-        # Process the file in chunks
+        # Process the file in chunks (good for big files, less RAM)
         for chunk in pd.read_csv(filepath, chunksize=1000):
             for _, row in chunk.iterrows():
                 # parse region, date, values...
@@ -197,7 +206,7 @@ def upload():
 
                 value = row[data_column]
 
-                # Check for duplicates
+                # Check for duplicates (don't want to double up)
                 exists = DataPoint.query.filter_by(
                     region=region,
                     date=date,
@@ -227,13 +236,14 @@ def upload():
         flash("No usable data found in the file.", 'upload:warning')
         return redirect(url_for('main.upload_page'))
     
-    
+    # If we got here, upload worked!
     flash(f"Upload successful. Data column '{data_column}' detected. Please select a graph to view.", "upload:success")
-    session['upload_success'] = True #this flag allows you to go into select_graph
+    session['upload_success'] = True # this flag allows you to go into select_graph
     return redirect(url_for('main.select_graph'))
 
 @bp.route('/select_graph', methods=['GET', 'POST'])
 def select_graph():
+    # Don't let people in unless they've uploaded data
     if 'user_id' not in session:
         flash("Please log in first.", "warning")
         return redirect(url_for('auth.login'))
@@ -246,6 +256,7 @@ def select_graph():
         graph_type = request.form.get('graph_type')
         date = request.form.get('date')
 
+        # Route to the right graph view
         if graph_type == 'map':
             return redirect(url_for('main.map_view'))
         elif graph_type == 'line':
@@ -255,7 +266,7 @@ def select_graph():
         elif graph_type == 'pie':
             return redirect(url_for('main.show_pie_chart', date=date))
 
-    # 👇 Get distinct dates
+    # 👇 Get distinct dates for dropdown (for user to pick)
     all_dates = (
         db.session.query(DataPoint.date)
         .filter_by(user_id=session['user_id'])
@@ -278,6 +289,7 @@ def manage_data():
         action = request.form.get('action')
 
         if action == 'clear_all':
+            # Danger! This deletes all your data
             DataPoint.query.filter_by(user_id=user_id).delete()
             db.session.commit()
             flash("All your data has been cleared.", "success")
@@ -298,7 +310,7 @@ def manage_data():
 
         return redirect(url_for('main.manage_data'))
 
-    # GET: Show all user's data
+    # GET: Show all user's data, with optional filters
     query = DataPoint.query.filter_by(user_id=user_id)
 
     region = request.args.get('region', '').strip()
@@ -325,7 +337,6 @@ def manage_data():
     return render_template('manage_data.html', data=data)
 
 
-
 @bp.route('/map')
 def map_view():
     selected_date = request.args.get('date')
@@ -345,7 +356,7 @@ def map_view():
     if not data:
         return "No data available.", 404
 
-    # Convert the data to a DataFrame
+    # Convert the data to a DataFrame (for plotly)
     df = pd.DataFrame([{
         'region': dp.region,
         'date': dp.date,
@@ -355,7 +366,7 @@ def map_view():
     # Ensure 'date' column is in datetime format for Plotly compatibility
     df['date'] = pd.to_datetime(df['date'], errors='coerce')
 
-    # Drop rows with missing dates
+    # Drop rows with missing dates (sometimes people upload weird stuff)
     df = df.dropna(subset=['date'])
 
     # Sort the DataFrame by date to ensure proper animation order
@@ -375,16 +386,16 @@ def map_view():
         animation_frame="date",  # Date slider will be generated
         color_continuous_scale="Reds",
         title=title,
-        range_color=[df['value'].min(), df['value'].max()] #Ensures consistant colour scale across all frmaes
+        range_color=[df['value'].min(), df['value'].max()] # Ensures consistant colour scale across all frames
     )
 
-    # Save the plot as an HTML file
+    # Save the plot as an HTML file (overwrites old one)
     map_path = os.path.join(current_app.static_folder, 'plots/map_plot.html')
     if (os.path.exists(map_path)):
         os.remove(map_path)
     fig.write_html(map_path)
 
-    return render_template('result.html', plot_url='plots/map_plot.html',plot_type='map')
+    return render_template('result.html', plot_url='plots/map_plot.html', plot_type='map')
 
 @bp.route('/line_chart')
 def show_line_graph():
@@ -473,6 +484,7 @@ def show_pie_chart():
 
 @bp.route('/upload_post', methods=['POST'])
 def upload_post():
+    # Only logged in users can upload to forum
     if 'user_id' not in session:
         flash("Please log in to upload a post.", 'warning')
         return redirect(url_for('auth.login_page'))
@@ -480,6 +492,7 @@ def upload_post():
     file = request.files.get('plot_image')
     comment = request.form.get('comment')
 
+    # Only accept PNGs (for now)
     if not file or not file.filename.endswith('.png'):
         flash("Please upload a valid PNG file.", 'error')
         return redirect(url_for('main.forum'))
@@ -488,11 +501,11 @@ def upload_post():
         flash("Comment is required.", 'error')
         return redirect(url_for('main.forum'))
 
-    # Get current user's email
+    # Get current user's email (for display)
     user = User.query.get(session['user_id'])
     email = user.email if user else "Unknown"
 
-    # Save the file
+    # Save the file to static/uploads
     filename = secure_filename(file.filename)
     filepath = os.path.join(current_app.static_folder, 'uploads', filename)
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -504,7 +517,7 @@ def upload_post():
         comment=comment,
         email=email,
         user_id=session['user_id'],
-        created_at=datetime.utcnow()  # Add this line if your model supports it
+        created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC)) 
     )
     db.session.add(shared_plot)
     db.session.commit()
@@ -515,6 +528,7 @@ def upload_post():
 
 @bp.route('/share_data', methods=['GET', 'POST'])
 def share_data():
+    # Only logged in users can share data
     if 'user_id' not in session:
         flash('Please log in to share data.', 'warning')
         return redirect(url_for('auth.login'))
@@ -523,10 +537,9 @@ def share_data():
     # Load existing users for dropdown
     users = User.query.filter(User.id != owner_id).order_by(User.email).all()
     # Load owner's data items
-    # Start query
     query = DataPoint.query.filter_by(user_id=owner_id)
 
-    # Filters from query params
+    # Filters from query params (region, date, min/max value)
     region = request.args.get('region')
     if region:
         query = query.filter(DataPoint.region.ilike(f'%{region}%'))
@@ -549,7 +562,6 @@ def share_data():
 
     data_points = query.order_by(DataPoint.date.desc()).all()
 
-
     if request.method == 'POST':
         recipient_email = request.form.get('recipient_email')
         selected_ids = request.form.getlist('data_ids')  # list of data_point.id strings
@@ -563,9 +575,8 @@ def share_data():
             flash('User not found.', 'share_data:error')
             return redirect(url_for('main.share_data'))
 
-        # Create share records
+        # Create share records (avoid duplicates)
         for dp_id in selected_ids:
-            # avoid duplicates
             exists = DataShare.query.filter_by(
                 owner_id=owner_id,
                 recipient_id=recipient.id,
@@ -589,6 +600,7 @@ def share_data():
     )
 
 def get_shared_datapoints(user_id, owner_id=None):
+    # Helper: get all datapoints shared to a user (optionally filter by owner)
     query = (
         DataShare.query
         .filter(DataShare.recipient_id == user_id)
@@ -613,13 +625,14 @@ def get_shared_datapoints(user_id, owner_id=None):
 
 @bp.route('/select_shared_graph', methods=['GET', 'POST'])
 def select_shared_graph():
+    # Only logged in users can view shared graphs
     if 'user_id' not in session:
         flash("Please log in first.", "warning")
         return redirect(url_for('auth.login'))
 
     user_id = session['user_id']
 
-    # fetch distinct sharers
+    # fetch distinct sharers (people who shared with you)
     sharers = (
         User.query
         .join(DataShare, User.id == DataShare.owner_id)
@@ -649,6 +662,7 @@ def select_shared_graph():
 
 @bp.route('/shared_map')
 def shared_map_view():
+    # Show a map of data shared to you (from a specific user, if selected)
     user_id = session['user_id']
     date_str = request.args.get('date')
     sharer_id = request.args.get('sharer_id', type=int)
@@ -674,6 +688,7 @@ def shared_map_view():
 
 @bp.route('/line')
 def show_shared_line():
+    # Show a line chart for shared data
     user_id = session['user_id']
     sharer_id = request.args.get('sharer_id', type=int)
     df = pd.DataFrame(get_shared_datapoints(user_id, owner_id=sharer_id))
@@ -686,6 +701,7 @@ def show_shared_line():
 
 @bp.route('/bar')
 def show_shared_bar():
+    # Show a bar chart for shared data (for a specific date)
     user_id = session['user_id']
     sharer_id = request.args.get('sharer_id', type=int)
     date_str = request.args.get('date')
@@ -702,6 +718,7 @@ def show_shared_bar():
 
 @bp.route('/pie')
 def show_shared_pie():
+    # Show a pie chart for shared data (top 10 regions)
     user_id = session['user_id']
     sharer_id = request.args.get('sharer_id', type=int)
     date_str = request.args.get('date')
@@ -718,6 +735,7 @@ def show_shared_pie():
 
 @bp.route('/share_plot_to_forum', methods=['POST'])
 def share_plot_to_forum():
+    # Share a plot (as HTML) to the forum
     if 'user_id' not in session:
         flash("Please log in to share plots.", "warning")
         return redirect(url_for('auth.login'))
@@ -726,7 +744,7 @@ def share_plot_to_forum():
     comment = request.form.get('comment')
     plot_type = request.form.get('plot_type')
 
-    # Read the HTML content of the plot
+    # Read the HTML content of the plot (so we can embed it in the forum)
     plot_path = os.path.join(current_app.static_folder, plot_url)
     if not os.path.exists(plot_path):
         flash("Plot file not found.", "error")
@@ -744,10 +762,10 @@ def share_plot_to_forum():
         email=email,
         user_id=session['user_id'],
         title=f"{plot_type.capitalize()} Plot",
-        created_at=datetime.utcnow()
+        created_at=datetime.now(UTC)
     )
     db.session.add(shared_plot)
     db.session.commit()
 
-    flash("Plot successfully shared to the forum!", "success")
+    flash("Plot successfully shared to the forum!", "share:success")
     return redirect(url_for('main.forum'))

@@ -16,7 +16,7 @@ class DataPoint(db.Model):
     region = db.Column(db.String(100)) #region or coutnry name
     date = db.Column(db.Date)  # Date of the data point
     value = db.Column(db.Float)  # Value for the data point (e.g., cases)
-    created_at = db.Column(db.DateTime, default=datetime.now(UTC)) # Timestamp of creation
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC)) # Timestamp of creation
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) # Reference to uploader (FK, so ties it the userid)
 
     user = db.relationship('User', backref='datapoints') # Relationship to User
@@ -31,7 +31,7 @@ class SharedPlot(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Reference to user
     title = db.Column(db.String(100), nullable=True)  # Optional plot title
     user = db.relationship('User', backref='shared_plots', lazy=True)  # Relationship to User
-    created_at = db.Column(db.DateTime, default=datetime.now(UTC))  # Timestamp of sharing
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))  # Timestamp of sharing
 
 # DataShare model: tracks sharing of data points between users
 class DataShare(db.Model):
@@ -39,7 +39,7 @@ class DataShare(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Who shared the data
     recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Who received the data
     data_id = db.Column(db.Integer, db.ForeignKey('data_point.id'), nullable=False)  # Shared data point
-    shared_at = db.Column(db.DateTime, default=datetime.now(UTC))  # Timestamp of sharing
+    shared_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))  # Timestamp of sharing
 
     owner = db.relationship('User', foreign_keys=[owner_id], backref='shared_out')  # owner relationship
     recipient = db.relationship('User', foreign_keys=[recipient_id], backref='shared_in')  # Recipient relationship

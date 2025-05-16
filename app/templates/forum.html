@@ -53,7 +53,12 @@
                     {% endif %}
                     <p class="text-gray-700"><strong>Email:</strong> {{ post.email }}</p>
                     <p class="text-gray-700"><strong>Comment:</strong> {{ post.comment }}</p>
-                    <p class="text-gray-500 text-sm"><strong>Posted:</strong> {{ post.created_at.strftime('%Y-%m-%d %H:%M') if post.created_at else 'Unknown' }}</p>
+                    <p class="text-gray-500 text-sm">
+                      <strong>Posted:</strong>
+                      <span class="utc-time" data-utc="{{ post.created_at.isoformat() }}Z">
+                        {{ post.created_at.strftime('%Y-%m-%d %H:%M') if post.created_at else 'Unknown' }}
+                      </span>
+                    </p>
                 </div>
                 {% endfor %}
                 {% if posts|length == 0 %}
@@ -83,4 +88,22 @@
         </div>
     </div>
 </body>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+  document.querySelectorAll('.utc-time').forEach(function(span) {
+    let utcString = span.getAttribute('data-utc');
+    if (utcString && !utcString.endsWith('Z') && !utcString.includes('+')) {
+      utcString += 'Z'; // force UTC if no offset
+    }
+    if (utcString) {
+      const date = new Date(utcString);
+      const localString = date.toLocaleString(undefined, {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      });
+      span.textContent = localString;
+    }
+  });
+});
+</script>
 </html>

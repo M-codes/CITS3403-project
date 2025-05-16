@@ -23,6 +23,8 @@ Mockup design: [Figma Design](https://www.figma.com/design/apbwOMo7xaG9D8hvylg64
 
 ## Getting Started
 
+All users are expected to use the latest stable version of Python to run the application and execute the testing procedures.
+
 ### To launch the app:
 
 ```bash

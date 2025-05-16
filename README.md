@@ -19,7 +19,7 @@ Mockup design: [Figma Design](https://www.figma.com/design/apbwOMo7xaG9D8hvylg64
 | 23390948 | Darcy Tyler | dtyler04 |
 | 23153032 | Dan Wiese | |
 
-**Note:** Michael: when pushing commit in wsl, only config username and not the email so it may look like two users with M-codes but it's still Michael.
+**Note:** Michael: when pushing commit in wsl,  I only config username and not the email so it may look like two users with M-codes but it's still from Michael.
 
 ## Getting Started
 

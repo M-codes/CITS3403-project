@@ -4,8 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Dashboard - Infection Monitoring</title>
+    <!-- Link to external stylesheet for custom styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
+         /* Inline CSS for dashboard layout and card styling */
         body {
             font-family: Arial, sans-serif;
             margin: 40px;
@@ -44,21 +46,27 @@
     </style>
 </head>
 <body>
+    <!-- Dashboard heading -->
     <h1>Infection Monitoring Dashboard</h1>
+    <!-- Display the logged-in user's email -->
     <p style="text-align: center; font-size: 1rem; color: #555;">
     Logged in as: <strong>{{ user_email }}</strong>
     </p>
+    <!-- Main dashboard grid with navigation cards -->
     <div class="dashboard">
+        <!-- Upload CSV File card -->
         <div class="card">
             <a href="{{ url_for('main.upload_page') }}">📄 Upload CSV File</a>
         </div>
+        <!-- Manual Data Entry card -->
         <div class="card">
             <a href="{{ url_for('main.manual_entry') }}">✍️ Manual Data Entry</a>
         </div>
+        <!-- View Data Table card -->
         <div class="card">
             <a href="{{ url_for('main.data_table') }}">📊 View Data Table</a>
         </div>
-        <!-- View Plots -->
+        <!-- View Plots card (enabled only if user has data) -->
         {% if has_data %}
         <div class="card">
             <a href="{{ url_for('main.select_graph') }}">🗺️ View Plots</a>
@@ -68,16 +76,19 @@
             🗺️ View Plots
         </div>
         {% endif %}
+        <!-- Forum card -->
         <div class="card">
             <a href="{{ url_for('main.forum') }}">💬 Forum</a>
         </div>
+        <!-- Data Manager card -->
         <div class="card">
             <a href="{{ url_for('main.manage_data') }}">👤 Data Manager</a>
         </div>
+        <!-- Share Data card -->
         <div class="card">
             <a href="{{ url_for('main.share_data') }}">🔗 Share Data</a>
         </div>
-        <!-- View Shared Data -->
+        <!-- View Shared Data card (enabled only if user has shared data) -->
         {% if has_shared %}
         <div class="card">
             <a href="{{ url_for('main.select_shared_graph') }}">📈 View Shared Data</a>
@@ -87,6 +98,7 @@
             📈 View Shared Data
         </div>
         {% endif %}
+         <!-- Log Out card -->
         <div class="card">
             <a href="{{ url_for('auth.logout') }}">🚪 Log Out</a>
         </div>

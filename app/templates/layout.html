@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>{% block title %}CSV Upload{% endblock %}</title>
+  <!-- Import Tailwind CSS for utility-first styling -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Link to custom styles stored in static/css/datastyles.css -->
   <link rel="stylesheet" href="{{url_for('static', filename = 'css/datastyles.css')}}">
+  <!-- Import Alpine.js for lightweight interactivity -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-[#e6e6fa]">

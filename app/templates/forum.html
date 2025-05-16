@@ -4,14 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forum</title>
+    <!-- Tailwind CSS for styling -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- jQuery for any dynamic JS (optional) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body class="flex flex-col min-h-screen">
-    <!-- Header Bar -->
+    <!-- Header Bar for visual separation -->
     <div class="header-bar h-16 bg-purple-800 shadow-md"></div>
 
+    <!-- Navigation: Return to Home button -->
     <div class="flex justify-center gap-4 mt-8">
         <a href="{{ url_for('main.index') }}" class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
             Return to Home
@@ -45,7 +48,7 @@
     </div>
     <div class="flex justify-center items-start mt-8">
 
-    <!-- Upload Form -->
+    <!-- Upload Form: Allows users to upload a new post with a plot and comment -->
     <div class="flex justify-center items-start mt-8">
         <div class="w-full max-w-5xl bg-white border rounded-lg p-6 shadow-md">
             <h2 class="text-center text-xl font-semibold">Upload a Post</h2>

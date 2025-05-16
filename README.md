@@ -40,6 +40,12 @@ To run selenium test:
 python3 -m venv venv
 source venv/bin/activate
 
+
+or on windows: 
+
+python -m venv venv    
+.\venv\Scripts\activate
+
 # 3. install required Python packages
 pip install -r requirements.txt
 
